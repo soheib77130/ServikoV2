@@ -56,6 +56,18 @@
     .formGrid{display:grid; gap:12px}
     .formRow{display:grid; gap:12px; grid-template-columns: repeat(2, minmax(0, 1fr))}
     @media (max-width: 640px){ .formRow{grid-template-columns:1fr} }
+    .inputWrap{position:relative}
+    .inputToggle{
+      position:absolute; right:10px; top:50%; transform: translateY(-50%);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius: 10px;
+      padding:6px 8px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .helper{color:var(--muted); font-weight:650; font-size:13px}
     input{
       width:100%;
       padding:12px 14px;
@@ -123,15 +135,23 @@
           <input type="tel" name="phone" placeholder="Téléphone" />
         </div>
         <div class="formRow">
-          <input type="password" name="password" placeholder="Mot de passe" required />
-          <input type="password" name="confirm" placeholder="Confirmer le mot de passe" required />
+          <div class="inputWrap">
+            <input type="password" name="password" placeholder="Mot de passe" required />
+            <button class="inputToggle" type="button" data-toggle-password="main">Afficher</button>
+          </div>
+          <div class="inputWrap">
+            <input type="password" name="confirm" placeholder="Confirmer le mot de passe" required />
+            <button class="inputToggle" type="button" data-toggle-password="confirm">Afficher</button>
+          </div>
         </div>
+        <div class="helper">Astuce : 8 caractères minimum, une majuscule et un chiffre.</div>
         <input type="text" name="company" placeholder="Nom de l'entreprise (optionnel)" />
         <div class="progressWrap">
           <div class="progressTrack"><div class="progressFill" id="signupProgress"></div></div>
           <div class="progressText" id="signupProgressText">Complétez le formulaire pour activer votre compte.</div>
         </div>
         <div class="status" id="signupStatus">Mot de passe : en attente.</div>
+        <label class="helper"><input type="checkbox" name="newsletter" /> Recevoir des conseils pour bien briefer un indépendant</label>
         <div class="actions">
           <button class="btn primary" type="submit">Créer mon compte</button>
           <a class="btn" href="login.html">Déjà inscrit ? Se connecter</a>
@@ -156,6 +176,7 @@
         storage: window.localStorage
       }
     });
+    const toggleButtons = Array.from(document.querySelectorAll("[data-toggle-password]"));
 
     function computeProgress(fields){
       const total = fields.length;
@@ -182,6 +203,17 @@
       const match = password && confirm && password === confirm;
       signupStatus.textContent = `Mot de passe : ${strength}${match ? " • correspond" : ""}`;
     }
+
+    toggleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const fieldName = button.dataset.togglePassword === "confirm" ? "confirm" : "password";
+        const field = signupForm?.querySelector(`[name='${fieldName}']`);
+        if (!field) return;
+        const isHidden = field.type === "password";
+        field.type = isHidden ? "text" : "password";
+        button.textContent = isHidden ? "Masquer" : "Afficher";
+      });
+    });
 
     if (signupForm){
       signupForm.addEventListener("input", updateSignupUI);

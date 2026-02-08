@@ -53,6 +53,19 @@
     .card h1{margin:0 0 6px; font-size:28px}
     .hint{color:var(--muted); font-weight:650; margin:0 0 16px}
     .formGrid{display:grid; gap:12px}
+    .inputWrap{position:relative}
+    .inputToggle{
+      position:absolute; right:10px; top:50%; transform: translateY(-50%);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius: 10px;
+      padding:6px 8px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    .helper{color:var(--muted); font-weight:650; font-size:13px}
+    .formFooter{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
     input{
       width:100%;
       padding:12px 14px;
@@ -104,7 +117,14 @@
       <p class="hint">Accédez à vos missions et revenus.</p>
       <form class="formGrid" id="indepLoginForm">
         <input type="email" name="email" placeholder="Email pro" required />
-        <input type="password" name="password" placeholder="Mot de passe" required />
+        <div class="inputWrap">
+          <input type="password" name="password" placeholder="Mot de passe" required />
+          <button class="inputToggle" type="button" data-toggle-password>Afficher</button>
+        </div>
+        <div class="formFooter">
+          <label class="helper"><input type="checkbox" name="remember" /> Rester connecté</label>
+          <a class="helper" href="indep-signup.html">Mot de passe oublié ?</a>
+        </div>
         <div class="actions">
           <button class="btn primary" type="submit">Se connecter</button>
           <a class="btn" href="indep-signup.html">Créer un compte indépendant</a>
@@ -125,6 +145,8 @@
         storage: window.localStorage
       }
     });
+    const togglePassword = document.querySelector("[data-toggle-password]");
+    const passwordField = indepLoginForm?.querySelector("[name='password']");
 
     async function redirectIfLoggedIn(){
       if (!supabaseClient) return;
@@ -135,6 +157,14 @@
     }
 
     redirectIfLoggedIn();
+
+    if (togglePassword && passwordField){
+      togglePassword.addEventListener("click", () => {
+        const isHidden = passwordField.type === "password";
+        passwordField.type = isHidden ? "text" : "password";
+        togglePassword.textContent = isHidden ? "Masquer" : "Afficher";
+      });
+    }
 
     if (indepLoginForm){
       indepLoginForm.addEventListener("submit", (event) => {

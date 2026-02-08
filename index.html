@@ -43,6 +43,16 @@
       display:flex; align-items:center; justify-content:space-between;
       gap:14px; padding:10px 0 6px;
     }
+    .announce{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:10px 14px; border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(15,23,42,.7);
+      color:var(--text);
+      font-weight:700;
+    }
+    .announce span{color:var(--muted); font-weight:650}
+    .announce a{color:#cfe6ff}
     .brand{
       display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
     }
@@ -266,6 +276,15 @@
       display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
     }
     @media (max-width: 900px){ .cards2{grid-template-columns:1fr} }
+    .trustRow{
+      display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;
+      color:var(--muted); font-weight:700;
+    }
+    .trustBadge{
+      padding:8px 12px; border-radius:999px;
+      border:1px dashed rgba(255,255,255,.18);
+      background: rgba(17,24,39,.45);
+    }
 
     .clientGrid{
       display:grid;
@@ -451,6 +470,13 @@
       font-weight:650;
     }
     .faqItem.open .faqAnswer{display:block}
+    .faqIcon{
+      width:28px; height:28px; border-radius:10px;
+      display:grid; place-items:center;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      font-weight:900;
+    }
 
     .formGrid{
       display:grid; gap:10px;
@@ -487,6 +513,40 @@
     footer .links{display:flex; gap:12px; flex-wrap:wrap}
     footer .links a{padding:8px 10px; border-radius:12px}
     footer .links a:hover{background: rgba(255,255,255,.06); color:var(--text)}
+    .testimonialGrid{
+      display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+    }
+    @media (max-width: 980px){ .testimonialGrid{grid-template-columns: repeat(2, 1fr)} }
+    @media (max-width: 640px){ .testimonialGrid{grid-template-columns: 1fr} }
+    .testimonial{
+      border:1px solid rgba(255,255,255,.1);
+      background: rgba(17,24,39,.6);
+      border-radius: 18px;
+      padding:16px;
+      display:grid; gap:10px;
+    }
+    .testimonial p{margin:0; color:var(--muted); font-weight:650}
+    .testimonial strong{font-size:16px}
+    .testimonial small{color:var(--muted); font-weight:650}
+    .ctaBand{
+      display:grid; gap:12px; align-items:center;
+      padding:20px; border-radius: 20px;
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(96,165,250,.18), rgba(34,197,94,.16));
+    }
+    .ctaBand h3{margin:0}
+    .ctaBand p{margin:0; color:var(--muted); font-weight:650}
+    .toTop{
+      position:fixed; right:18px; bottom:18px; z-index:80;
+      width:46px; height:46px; border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.8);
+      color:var(--text); display:grid; place-items:center;
+      box-shadow: 0 16px 30px rgba(0,0,0,.3);
+      opacity:0; transform: translateY(8px); pointer-events:none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+    .toTop.show{opacity:1; transform: translateY(0); pointer-events:auto}
 
     /* petit modal (optionnel) */
     .modalBackdrop{
@@ -548,6 +608,10 @@
 
 <body>
   <div class="container">
+    <div class="announce">
+      <div>✨ Version 2.0 — Matching amélioré & suivi simplifié.</div>
+      <span>Besoin d’aide ? <a href="#contact">Contactez-nous</a></span>
+    </div>
     <!-- NAV -->
     <header class="nav">
       <a class="brand" href="#top" aria-label="Serviko">
@@ -614,6 +678,11 @@
               <span>Support humain 7j/7.</span>
             </div>
           </div>
+          <div class="trustRow fadeUp delay-3">
+            <span class="trustBadge">✅ Paiement sécurisé</span>
+            <span class="trustBadge">⏱️ Réponse rapide</span>
+            <span class="trustBadge">🤝 Support humain</span>
+          </div>
         </div>
 
         <aside class="kpiCard fadeUp delay-2" aria-label="Pourquoi Serviko">
@@ -638,6 +707,11 @@
       <div class="sectionTitle">
         <h2>Services disponibles</h2>
         <div class="hint">Choisissez directement votre besoin.</div>
+      </div>
+
+      <div class="searchBar">
+        <input id="serviceSearch" type="search" placeholder="Rechercher un service (ex: logo, vidéo)" aria-label="Rechercher un service" />
+        <div class="searchMeta" id="serviceCount">5 services</div>
       </div>
 
       <div class="grid5" role="list">
@@ -722,15 +796,15 @@
       </div>
       <div class="faq">
         <div class="faqItem">
-          <button class="faqQuestion" type="button">Comment fonctionne la commission de 2% ? <span>+</span></button>
+          <button class="faqQuestion" type="button">Comment fonctionne la commission de 2% ? <span class="faqIcon">+</span></button>
           <div class="faqAnswer">La commission est fixe et prélevée une fois la mission validée par l'administrateur.</div>
         </div>
         <div class="faqItem">
-          <button class="faqQuestion" type="button">Puis-je discuter avant de payer ? <span>+</span></button>
+          <button class="faqQuestion" type="button">Puis-je discuter avant de payer ? <span class="faqIcon">+</span></button>
           <div class="faqAnswer">Oui, vous échangez en direct pour cadrer le périmètre, le budget et le délai.</div>
         </div>
         <div class="faqItem">
-          <button class="faqQuestion" type="button">Quels types de services sont acceptés ? <span>+</span></button>
+          <button class="faqQuestion" type="button">Quels types de services sont acceptés ? <span class="faqIcon">+</span></button>
           <div class="faqAnswer">Les services créatifs, digitaux et marketing sont prioritaires, mais vous pouvez proposer tout type de mission.</div>
         </div>
       </div>
@@ -794,6 +868,43 @@
       </div>
     </section>
 
+    <!-- TESTIMONIALS -->
+    <section class="section">
+      <div class="sectionTitle">
+        <h2>Ils ont lancé leur projet avec Serviko</h2>
+        <div class="hint">Retour d’expérience client & indépendant.</div>
+      </div>
+      <div class="testimonialGrid">
+        <article class="testimonial">
+          <strong>Emma — e-commerce</strong>
+          <p>“En 48h j’avais un expert. Le brief est resté clair du début à la fin.”</p>
+          <small>Livraison en 10 jours</small>
+        </article>
+        <article class="testimonial">
+          <strong>Yacine — motion designer</strong>
+          <p>“Plateforme fluide, briefs bien cadrés. Le 2% change tout.”</p>
+          <small>5 missions en 2 mois</small>
+        </article>
+        <article class="testimonial">
+          <strong>Charlotte — agence</strong>
+          <p>“Support humain réactif et paiement sécurisé, tout est clair.”</p>
+          <small>Budget maîtrisé</small>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section">
+      <div class="ctaBand">
+        <h3>Prêt à lancer votre projet ?</h3>
+        <p>Créez votre brief et recevez un indépendant qualifié en moins de 24h.</p>
+        <div class="ctaRow">
+          <a class="btn primary" href="request.html">Démarrer maintenant</a>
+          <a class="btn" href="signup.html">Créer un compte client</a>
+        </div>
+      </div>
+    </section>
+
     <!-- CONTACT -->
     <section id="contact" class="section">
       <div class="sectionTitle">
@@ -826,6 +937,7 @@
       </div>
     </footer>
   </div>
+  <button class="toTop" id="toTop" type="button" aria-label="Revenir en haut">↑</button>
 
   <script>
     // Année
@@ -835,6 +947,9 @@
     const cats = document.querySelectorAll(".cat");
     const contactForm = document.getElementById("contactForm");
     const faqButtons = document.querySelectorAll(".faqQuestion");
+    const serviceSearch = document.getElementById("serviceSearch");
+    const serviceCount = document.getElementById("serviceCount");
+    const toTop = document.getElementById("toTop");
 
     if (contactForm){
       contactForm.addEventListener("submit", (event) => {
@@ -853,8 +968,44 @@
           if (openItem !== item) openItem.classList.remove("open");
         });
         item.classList.toggle("open", !isOpen);
+        const icon = button.querySelector(".faqIcon");
+        if (icon){
+          icon.textContent = item.classList.contains("open") ? "−" : "+";
+        }
       });
     });
+
+    function updateServiceCount(visibleCount){
+      if (serviceCount){
+        serviceCount.textContent = `${visibleCount} service${visibleCount > 1 ? "s" : ""}`;
+      }
+    }
+
+    if (serviceSearch){
+      serviceSearch.addEventListener("input", (event) => {
+        const term = event.target.value.toLowerCase().trim();
+        let visible = 0;
+        cats.forEach((cat) => {
+          const label = cat.dataset.cat?.toLowerCase() || "";
+          const text = cat.textContent.toLowerCase();
+          const match = !term || label.includes(term) || text.includes(term);
+          cat.style.display = match ? "flex" : "none";
+          if (match) visible += 1;
+        });
+        updateServiceCount(visible);
+      });
+      updateServiceCount(cats.length);
+    }
+
+    if (toTop){
+      window.addEventListener("scroll", () => {
+        const shouldShow = window.scrollY > 400;
+        toTop.classList.toggle("show", shouldShow);
+      });
+      toTop.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
   </script>
 </body>
 </html>

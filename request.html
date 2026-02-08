@@ -98,6 +98,8 @@
     .stepper{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
     .stepper span{padding:6px 10px; border-radius:999px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-weight:700; font-size:12px}
     .stepper span.active{background: rgba(34,197,94,.2); border-color: rgba(34,197,94,.4)}
+    .stepProgress{height:8px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.12)}
+    .stepProgressFill{height:100%; width:25%; background: linear-gradient(135deg, var(--accent2), var(--accent)); transition: width .2s ease}
     .step{display:none}
     .step.active{display:grid; gap:12px}
     .checklist{display:grid; gap:8px}
@@ -105,6 +107,8 @@
     .checklist input{width:auto}
     .muted{color:var(--muted); font-weight:600}
     .inlineActions{display:flex; gap:8px; flex-wrap:wrap}
+    .metaRow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+    .statusNote{color:var(--muted); font-weight:650; font-size:13px}
   </style>
 </head>
 <body>
@@ -126,6 +130,9 @@
           <span data-step="1">2. Détails</span>
           <span data-step="2">3. Cahier des charges</span>
           <span data-step="3">4. Récapitulatif</span>
+        </div>
+        <div class="stepProgress" aria-hidden="true">
+          <div class="stepProgressFill" id="stepProgressFill"></div>
         </div>
 
         <div class="step active" data-step="0">
@@ -208,8 +215,13 @@
         <div class="actions">
           <button class="btn" type="button" id="prevStep">Précédent</button>
           <button class="btn" type="button" id="nextStep">Suivant</button>
+          <button class="btn" type="button" id="saveDraft">Sauvegarder le brouillon</button>
           <button class="btn primary" type="submit">Lancer le match</button>
           <span class="pill" id="requestStatus">Connexion requise</span>
+        </div>
+        <div class="metaRow">
+          <span class="statusNote" id="draftStatus">Brouillon non sauvegardé</span>
+          <span class="statusNote">Match moyen : 1 à 3 indépendants qualifiés.</span>
         </div>
       </form>
     </section>
@@ -239,6 +251,9 @@
     const addChecklistItem = document.getElementById("addChecklistItem");
     const customItemInput = document.getElementById("customItemInput");
     const categorySelect = document.getElementById("categorySelect");
+    const stepProgressFill = document.getElementById("stepProgressFill");
+    const saveDraftButton = document.getElementById("saveDraft");
+    const draftStatus = document.getElementById("draftStatus");
     const draftKey = "serviko-request-draft";
     let currentStep = 0;
 
@@ -300,6 +315,10 @@
         stepper.querySelectorAll("span").forEach((span) => {
           span.classList.toggle("active", Number(span.dataset.step) === currentStep);
         });
+      }
+      if (stepProgressFill){
+        const progressValue = ((currentStep + 1) / steps.length) * 100;
+        stepProgressFill.style.width = `${progressValue}%`;
       }
       if (prevStepBtn) prevStepBtn.disabled = currentStep === 0;
       if (nextStepBtn) nextStepBtn.style.display = currentStep === steps.length - 1 ? "none" : "inline-flex";
@@ -374,6 +393,10 @@
       if (!requestForm) return;
       const draft = collectDraft();
       window.localStorage.setItem(draftKey, JSON.stringify(draft));
+      if (draftStatus){
+        const now = new Date();
+        draftStatus.textContent = `Brouillon sauvegardé à ${now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+      }
     }
 
     function loadDraft(){
@@ -397,6 +420,9 @@
     const existingDraft = loadDraft();
     if (existingDraft){
       applyDraft(existingDraft);
+      if (draftStatus){
+        draftStatus.textContent = "Brouillon récupéré automatiquement.";
+      }
     }
 
     if (categorySelect){
@@ -427,6 +453,12 @@
       nextStepBtn.addEventListener("click", () => {
         currentStep = Math.min(steps.length - 1, currentStep + 1);
         updateStepper();
+      });
+    }
+
+    if (saveDraftButton){
+      saveDraftButton.addEventListener("click", () => {
+        saveDraft();
       });
     }
 
@@ -509,6 +541,9 @@
         alert(matchResult?.message || "Demande envoyée ! Nous lançons la recommandation.");
         clearDraft();
         requestForm.reset();
+        if (draftStatus){
+          draftStatus.textContent = "Brouillon non sauvegardé";
+        }
         window.location.href = "dashboard.html";
       });
     }

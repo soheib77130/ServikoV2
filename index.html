@@ -15,21 +15,29 @@
       --line:#1f2937;
       --accent:#22c55e;
       --accent2:#60a5fa;
+      --accent3:#fbbf24;
       --danger:#fb7185;
       --radius:18px;
       --shadow: 0 16px 40px rgba(0,0,0,.35);
+      --shadow-soft: 0 12px 30px rgba(3,6,12,.35);
+      --glass: rgba(17,24,39,.62);
     }
     *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
     body{
       margin:0;
+      min-height:100vh;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 55%),
-                  radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.16), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.20), transparent 55%),
+        radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.18), transparent 55%),
+        linear-gradient(180deg, rgba(7,11,18,.7), rgba(7,11,18,1)),
+        var(--bg);
       color:var(--text);
-      line-height:1.35;
+      line-height:1.5;
     }
     a{color:inherit; text-decoration:none}
+    ::selection{background:rgba(96,165,250,.35); color:#0b1220}
     .container{max-width:1100px; margin:0 auto; padding:22px}
     .nav{
       display:flex; align-items:center; justify-content:space-between;
@@ -41,7 +49,7 @@
     .logo{
       width:36px; height:36px; border-radius:12px;
       background: linear-gradient(135deg, var(--accent2), var(--accent));
-      box-shadow: 0 10px 24px rgba(96,165,250,.2);
+      box-shadow: 0 12px 26px rgba(96,165,250,.26);
       display:grid; place-items:center;
       font-weight:900; color:#071018;
       overflow:hidden;
@@ -64,10 +72,10 @@
 
     .hero{
       margin-top:18px;
-      background: linear-gradient(180deg, rgba(17,24,39,.78), rgba(17,24,39,.56));
+      background: linear-gradient(180deg, rgba(17,24,39,.86), rgba(17,24,39,.58));
       border:1px solid rgba(255,255,255,.08);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      box-shadow: var(--shadow-soft);
       padding:28px;
       overflow:hidden;
       position:relative;
@@ -107,12 +115,12 @@
     .serviceRow{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px}
     .serviceTag{
       padding:8px 12px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(17,24,39,.55);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.7);
       font-weight:700; color:var(--text);
-      transition: transform .2s ease, border-color .2s ease;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
     }
-    .serviceTag:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.2)}
+    .serviceTag:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.2); background:rgba(17,24,39,.82)}
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
       padding:12px 14px;
@@ -122,20 +130,22 @@
       color:var(--text);
       font-weight:800;
       cursor:pointer;
-      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
       user-select:none;
     }
-    .btn:hover{background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.16)}
+    .btn:hover{background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.16); box-shadow: 0 10px 18px rgba(0,0,0,.2)}
     .btn:active{transform: translateY(1px)}
     .btn.primary{
       background: linear-gradient(135deg, var(--accent2), var(--accent));
       border-color: rgba(255,255,255,.0);
       color:#061019;
+      box-shadow: 0 18px 30px rgba(34,197,94,.25);
     }
-    .btn.primary:hover{filter: brightness(1.03)}
+    .btn.primary:hover{filter: brightness(1.05)}
+    .btn:focus-visible{outline:2px solid rgba(96,165,250,.7); outline-offset:2px}
     .kpiCard{
       border:1px solid rgba(255,255,255,.10);
-      background: rgba(10,14,22,.35);
+      background: rgba(10,14,22,.45);
       border-radius: var(--radius);
       padding:18px;
       display:grid; gap:10px;
@@ -311,10 +321,11 @@
 
     .card{
       border:1px solid rgba(255,255,255,.10);
-      background: rgba(17,24,39,.50);
+      background: rgba(17,24,39,.55);
       border-radius: var(--radius);
       padding:18px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+      box-shadow: 0 12px 26px rgba(0,0,0,.24);
+      backdrop-filter: blur(8px);
     }
     .card h3{margin:0 0 6px; font-size:18px; letter-spacing:-.2px}
     .card ul{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:8px}
@@ -450,10 +461,18 @@
       padding:12px 14px;
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.12);
-      background: rgba(17,24,39,.6);
+      background: rgba(17,24,39,.7);
       color:var(--text);
       font-weight:650;
       font-family: inherit;
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .formGrid input:focus-visible,
+    .formGrid textarea:focus-visible{
+      outline: none;
+      border-color: rgba(96,165,250,.6);
+      box-shadow: 0 0 0 3px rgba(96,165,250,.2);
+      background: rgba(17,24,39,.85);
     }
     .formGrid textarea{min-height:120px; resize:vertical}
 
@@ -499,6 +518,31 @@
       cursor:pointer;
       font-weight:800;
     }
+    .heroStats{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+      margin-top:18px;
+    }
+    @media (max-width: 900px){ .heroStats{grid-template-columns:1fr} }
+    .statCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(12,16,25,.65);
+      border-radius: 16px;
+      padding:14px;
+      display:grid; gap:6px;
+    }
+    .statCard strong{font-size:20px}
+    .statCard span{color:var(--muted); font-weight:650}
+    .ctaCard{
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(96,165,250,.15), rgba(34,197,94,.12));
+      border-radius: var(--radius);
+      padding:18px;
+      display:grid; gap:12px;
+    }
+    .ctaCard h3{margin:0}
+    .ctaCard p{margin:0; color:var(--muted); font-weight:650}
   </style>
 </head>
 
@@ -554,6 +598,21 @@
           <div class="ctaRow fadeUp delay-3">
             <a class="btn primary" href="request.html">Déposer une demande</a>
             <a class="btn" href="#categories">Voir les services</a>
+          </div>
+
+          <div class="heroStats fadeUp delay-3">
+            <div class="statCard">
+              <strong>Réponse &lt; 24h</strong>
+              <span>Brief analysé, indépendant trouvé.</span>
+            </div>
+            <div class="statCard">
+              <strong>+120 experts</strong>
+              <span>Design, vidéo, marketing, tech.</span>
+            </div>
+            <div class="statCard">
+              <strong>Assistance premium</strong>
+              <span>Support humain 7j/7.</span>
+            </div>
           </div>
         </div>
 
@@ -626,6 +685,54 @@
           <h3>Autres services</h3>
           <p>Tout le reste, simple.</p>
         </button>
+      </div>
+    </section>
+
+    <!-- ESPACES -->
+    <section id="client" class="section">
+      <div class="sectionTitle">
+        <h2>Vos espaces Serviko</h2>
+        <div class="hint">Deux parcours clairs, une seule plateforme.</div>
+      </div>
+      <div class="cards2">
+        <div class="ctaCard">
+          <h3>Espace client</h3>
+          <p>Suivez vos demandes, discutez avec les indépendants et validez vos livraisons.</p>
+          <div class="ctaRow">
+            <a class="btn primary" href="signup.html">Créer un compte client</a>
+            <a class="btn" href="login.html">Se connecter</a>
+          </div>
+        </div>
+        <div id="independant" class="ctaCard">
+          <h3>Espace indépendant</h3>
+          <p>Recevez des missions qualifiées, fixez vos prix et gardez 98% de vos revenus.</p>
+          <div class="ctaRow">
+            <a class="btn primary" href="indep-signup.html">Devenir indépendant</a>
+            <a class="btn" href="indep-login.html">Connexion pro</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <div class="sectionTitle">
+        <h2>FAQ rapide</h2>
+        <div class="hint">Quelques réponses essentielles avant de démarrer.</div>
+      </div>
+      <div class="faq">
+        <div class="faqItem">
+          <button class="faqQuestion" type="button">Comment fonctionne la commission de 2% ? <span>+</span></button>
+          <div class="faqAnswer">La commission est fixe et prélevée une fois la mission validée par l'administrateur.</div>
+        </div>
+        <div class="faqItem">
+          <button class="faqQuestion" type="button">Puis-je discuter avant de payer ? <span>+</span></button>
+          <div class="faqAnswer">Oui, vous échangez en direct pour cadrer le périmètre, le budget et le délai.</div>
+        </div>
+        <div class="faqItem">
+          <button class="faqQuestion" type="button">Quels types de services sont acceptés ? <span>+</span></button>
+          <div class="faqAnswer">Les services créatifs, digitaux et marketing sont prioritaires, mais vous pouvez proposer tout type de mission.</div>
+        </div>
       </div>
     </section>
 
@@ -727,6 +834,7 @@
     // Catégories (exemple : ouvrir une page / filtrer / afficher une liste)
     const cats = document.querySelectorAll(".cat");
     const contactForm = document.getElementById("contactForm");
+    const faqButtons = document.querySelectorAll(".faqQuestion");
 
     if (contactForm){
       contactForm.addEventListener("submit", (event) => {
@@ -735,6 +843,18 @@
         contactForm.reset();
       });
     }
+
+    faqButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = button.closest(".faqItem");
+        if (!item) return;
+        const isOpen = item.classList.contains("open");
+        document.querySelectorAll(".faqItem.open").forEach((openItem) => {
+          if (openItem !== item) openItem.classList.remove("open");
+        });
+        item.classList.toggle("open", !isOpen);
+      });
+    });
   </script>
 </body>
 </html>

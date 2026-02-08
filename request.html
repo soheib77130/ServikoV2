@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Serviko — Déposer une demande</title>
+  <meta name="description" content="Déposer une demande de service sur Serviko." />
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#111827;
+      --muted:#9ca3af;
+      --text:#e5e7eb;
+      --accent:#22c55e;
+      --accent2:#60a5fa;
+      --radius:18px;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.16), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:980px; margin:0 auto; padding:24px}
+    .nav{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display:grid; place-items:center; font-weight:900; color:#071018;
+    }
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      border-radius: var(--radius);
+      padding:20px;
+      box-shadow: var(--shadow);
+      display:grid; gap:12px;
+    }
+    .card h1{margin:0 0 6px; font-size:28px}
+    .hint{color:var(--muted); font-weight:650; margin:0 0 16px}
+    .formGrid{display:grid; gap:12px}
+    .formRow{display:grid; gap:12px; grid-template-columns: repeat(2, minmax(0, 1fr))}
+    @media (max-width: 640px){ .formRow{grid-template-columns:1fr} }
+    input, textarea, select{
+      width:100%;
+      padding:12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.6);
+      color:var(--text);
+      font-weight:650;
+      font-family: inherit;
+    }
+    textarea{min-height:140px; resize:vertical}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:12px 14px; border-radius:14px; font-weight:800; cursor:pointer;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+    }
+    .btn.primary{
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-color: transparent; color:#061019;
+    }
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    .pill{padding:6px 10px; border-radius:999px; background: rgba(96,165,250,.15); border:1px solid rgba(96,165,250,.22); font-weight:700; font-size:12px}
+    .list{margin:0; padding:0; list-style:none; display:grid; gap:6px}
+    .stepper{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+    .stepper span{padding:6px 10px; border-radius:999px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); font-weight:700; font-size:12px}
+    .stepper span.active{background: rgba(34,197,94,.2); border-color: rgba(34,197,94,.4)}
+    .step{display:none}
+    .step.active{display:grid; gap:12px}
+    .checklist{display:grid; gap:8px}
+    .checklist label{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.1); background: rgba(17,24,39,.65); font-weight:600}
+    .checklist input{width:auto}
+    .muted{color:var(--muted); font-weight:600}
+    .inlineActions{display:flex; gap:8px; flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="nav">
+      <a class="brand" href="index.html">
+        <div class="logo">S</div>
+        <div>Serviko</div>
+      </a>
+      <a class="btn" href="dashboard.html">Mon espace client</a>
+    </header>
+
+    <section class="card">
+      <h1>Déposer une demande</h1>
+      <p class="hint">Questionnaire guidé → match automatique → messagerie instantanée pour cadrer le prix et le cahier des charges.</p>
+      <form class="formGrid" id="requestForm">
+        <div class="stepper" id="stepper">
+          <span data-step="0" class="active">1. Projet</span>
+          <span data-step="1">2. Détails</span>
+          <span data-step="2">3. Cahier des charges</span>
+          <span data-step="3">4. Récapitulatif</span>
+        </div>
+
+        <div class="step active" data-step="0">
+          <div class="formRow">
+            <input type="text" name="title" placeholder="Titre du projet" required />
+            <select name="category" id="categorySelect" required>
+              <option value="">Catégorie</option>
+              <option>Site web</option>
+              <option>Logo & design</option>
+              <option>Vidéo & montage</option>
+              <option>Rédaction</option>
+              <option>Autre</option>
+            </select>
+          </div>
+          <div class="formRow">
+            <input type="number" name="budget" placeholder="Budget (€)" min="0" required />
+            <select name="deadline" required>
+              <option value="">Délai souhaité</option>
+              <option>7 jours</option>
+              <option>14 jours</option>
+              <option>1 mois</option>
+              <option>Flexible</option>
+            </select>
+          </div>
+          <div class="formRow">
+            <select name="urgency" required>
+              <option value="">Urgence du projet</option>
+              <option>Urgent (dès que possible)</option>
+              <option>Normal (planning classique)</option>
+              <option>Flexible (à organiser)</option>
+            </select>
+            <select name="collab" required>
+              <option value="">Mode de collaboration</option>
+              <option>Échanges rapides (chat)</option>
+              <option>Points hebdo</option>
+              <option>Autonome (peu d'échanges)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="step" data-step="1">
+          <div class="formRow">
+            <input type="text" name="style" placeholder="Style / direction (ex: minimaliste, premium)" />
+            <input type="text" name="skills" placeholder="Compétences clés (ex: Webflow, SEO)" />
+          </div>
+          <div class="formRow">
+            <select name="format" required>
+              <option value="">Format attendu</option>
+              <option>Livraison clé en main</option>
+              <option>Prototype / maquette</option>
+              <option>Conseil / audit</option>
+            </select>
+            <select name="quality" required>
+              <option value="">Niveau d'exigence</option>
+              <option>Standard</option>
+              <option>Premium</option>
+              <option>Expert</option>
+            </select>
+          </div>
+          <textarea name="description" placeholder="Décrivez votre besoin, livrables attendus, contraintes..." required></textarea>
+        </div>
+
+        <div class="step" data-step="2">
+          <p class="muted">Cochez les livrables souhaités. Le cahier des charges s’adapte à la catégorie sélectionnée.</p>
+          <div class="checklist" id="checklistContainer"></div>
+          <div class="inlineActions">
+            <input type="text" id="customItemInput" placeholder="Ajouter un point personnalisé" />
+            <button class="btn" type="button" id="addChecklistItem">Ajouter</button>
+          </div>
+        </div>
+
+        <div class="step" data-step="3">
+          <div class="card" style="background:rgba(17,24,39,.7)">
+            <h3>Récapitulatif</h3>
+            <p class="muted" id="recapText">Complétez les étapes précédentes pour voir le résumé.</p>
+            <ul class="list" id="recapList"></ul>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="button" id="prevStep">Précédent</button>
+          <button class="btn" type="button" id="nextStep">Suivant</button>
+          <button class="btn primary" type="submit">Lancer le match</button>
+          <span class="pill" id="requestStatus">Connexion requise</span>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://skfqoyyoahuaffshimnc.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_yxLCOU94zhGck9yvGYch5Q_ePCPd9Yq";
+    const supabaseClient = window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        storage: window.localStorage
+      }
+    });
+    const requestForm = document.getElementById("requestForm");
+    const requestStatus = document.getElementById("requestStatus");
+    const submitButton = requestForm?.querySelector("button[type='submit']");
+    const steps = Array.from(document.querySelectorAll(".step"));
+    const stepper = document.getElementById("stepper");
+    const prevStepBtn = document.getElementById("prevStep");
+    const nextStepBtn = document.getElementById("nextStep");
+    const recapText = document.getElementById("recapText");
+    const recapList = document.getElementById("recapList");
+    const checklistContainer = document.getElementById("checklistContainer");
+    const addChecklistItem = document.getElementById("addChecklistItem");
+    const customItemInput = document.getElementById("customItemInput");
+    const categorySelect = document.getElementById("categorySelect");
+    const draftKey = "serviko-request-draft";
+    let currentStep = 0;
+
+    const checklistByCategory = {
+      "Site web": [
+        "Audit du besoin et cadrage",
+        "Maquette / wireframes",
+        "Développement responsive",
+        "Optimisation SEO de base",
+        "Mise en ligne + documentation"
+      ],
+      "Logo & design": [
+        "Moodboard / inspirations",
+        "2-3 propositions de logo",
+        "Déclinaisons (couleurs, noir & blanc)",
+        "Charte graphique simplifiée",
+        "Fichiers sources livrés"
+      ],
+      "Vidéo & montage": [
+        "Storyboard / script court",
+        "Montage vidéo",
+        "Sound design",
+        "Sous-titres",
+        "Exports multi-formats"
+      ],
+      "Rédaction": [
+        "Brief éditorial",
+        "Plan détaillé",
+        "Rédaction du contenu",
+        "Relecture / corrections",
+        "Optimisation SEO (mots-clés)"
+      ],
+      "Autre": [
+        "Diagnostic du besoin",
+        "Plan d'action",
+        "Livrables principaux",
+        "Suivi et ajustements"
+      ]
+    };
+
+    function renderChecklist(category){
+      if (!checklistContainer) return;
+      checklistContainer.innerHTML = "";
+      const items = checklistByCategory[category] || checklistByCategory["Autre"];
+      items.forEach((item) => {
+        const id = `item-${item.replace(/\s+/g, "-").toLowerCase()}`;
+        const label = document.createElement("label");
+        label.innerHTML = `<input type="checkbox" checked data-item="${item}"/>${item}`;
+        label.querySelector("input").id = id;
+        checklistContainer.appendChild(label);
+      });
+    }
+
+    function updateStepper(){
+      steps.forEach((step) => {
+        step.classList.toggle("active", Number(step.dataset.step) === currentStep);
+      });
+      if (stepper){
+        stepper.querySelectorAll("span").forEach((span) => {
+          span.classList.toggle("active", Number(span.dataset.step) === currentStep);
+        });
+      }
+      if (prevStepBtn) prevStepBtn.disabled = currentStep === 0;
+      if (nextStepBtn) nextStepBtn.style.display = currentStep === steps.length - 1 ? "none" : "inline-flex";
+      if (recapText && recapList && currentStep === steps.length - 1){
+        const data = new FormData(requestForm);
+        recapText.textContent = "Voici un aperçu de votre demande avant matching.";
+        recapList.innerHTML = `
+          <li><strong>${data.get("title") || "Projet"}</strong> — ${data.get("category") || "Catégorie"}</li>
+          <li>Budget cible : ${data.get("budget") || "—"} €</li>
+          <li>Délai : ${data.get("deadline") || "—"} • Urgence : ${data.get("urgency") || "—"}</li>
+          <li>Format : ${data.get("format") || "—"} • Exigence : ${data.get("quality") || "—"}</li>
+        `;
+      }
+    }
+
+    async function hydrateStatus(){
+      if (!supabaseClient || !requestStatus) return;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.user){
+        requestStatus.textContent = "Connexion requise";
+        return;
+      }
+      requestStatus.textContent = "Connecté";
+    }
+
+    function setStatus(text){
+      if (requestStatus) requestStatus.textContent = text;
+    }
+
+    function setSubmitting(isSubmitting){
+      if (submitButton){
+        submitButton.disabled = isSubmitting;
+        submitButton.textContent = isSubmitting ? "Matching en cours..." : "Lancer le match";
+      }
+    }
+
+    function collectDraft(){
+      const formData = new FormData(requestForm);
+      const checklist = Array.from(checklistContainer?.querySelectorAll("input[type='checkbox']") || [])
+        .map((checkbox) => ({
+          label: checkbox.dataset.item,
+          checked: checkbox.checked
+        }));
+      return {
+        data: Object.fromEntries(formData.entries()),
+        checklist,
+        step: currentStep
+      };
+    }
+
+    function applyDraft(draft){
+      if (!draft || !requestForm) return;
+      Object.entries(draft.data || {}).forEach(([key, value]) => {
+        const field = requestForm.querySelector(`[name="${key}"]`);
+        if (field){
+          field.value = value;
+        }
+      });
+      renderChecklist((draft.data?.category || "Autre").toString());
+      if (draft.checklist && checklistContainer){
+        checklistContainer.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+          const item = draft.checklist.find((entry) => entry.label === checkbox.dataset.item);
+          if (item) checkbox.checked = item.checked;
+        });
+      }
+      currentStep = 3;
+      updateStepper();
+      setStatus("Prêt à déposer");
+    }
+
+    function saveDraft(){
+      if (!requestForm) return;
+      const draft = collectDraft();
+      window.localStorage.setItem(draftKey, JSON.stringify(draft));
+    }
+
+    function loadDraft(){
+      try {
+        const raw = window.localStorage.getItem(draftKey);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function clearDraft(){
+      window.localStorage.removeItem(draftKey);
+    }
+
+    hydrateStatus();
+    renderChecklist(categorySelect?.value || "Autre");
+    updateStepper();
+
+    const existingDraft = loadDraft();
+    if (existingDraft){
+      applyDraft(existingDraft);
+    }
+
+    if (categorySelect){
+      categorySelect.addEventListener("change", (event) => {
+        renderChecklist(event.target.value || "Autre");
+      });
+    }
+
+    if (addChecklistItem && customItemInput){
+      addChecklistItem.addEventListener("click", () => {
+        const value = customItemInput.value.trim();
+        if (!value) return;
+        const label = document.createElement("label");
+        label.innerHTML = `<input type="checkbox" checked data-item="${value}"/>${value}`;
+        checklistContainer?.appendChild(label);
+        customItemInput.value = "";
+      });
+    }
+
+    if (prevStepBtn){
+      prevStepBtn.addEventListener("click", () => {
+        currentStep = Math.max(0, currentStep - 1);
+        updateStepper();
+      });
+    }
+
+    if (nextStepBtn){
+      nextStepBtn.addEventListener("click", () => {
+        currentStep = Math.min(steps.length - 1, currentStep + 1);
+        updateStepper();
+      });
+    }
+
+    if (requestForm){
+      requestForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!requestForm.checkValidity()){
+          const invalidField = requestForm.querySelector(":invalid");
+          if (invalidField){
+            const invalidStep = invalidField.closest(".step");
+            if (invalidStep){
+              currentStep = Number(invalidStep.dataset.step || 0);
+              updateStepper();
+            }
+          }
+          requestForm.reportValidity();
+          return;
+        }
+        if (!supabaseClient){
+          alert("Configurez Supabase pour activer l'envoi.");
+          return;
+        }
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const user = session?.user;
+        if (!user){
+          saveDraft();
+          alert("Créez un compte pour finaliser la demande. Vous reprendrez ici.");
+          window.location.href = "signup.html";
+          return;
+        }
+        const role = user.user_metadata?.role;
+        if (role && role !== "client"){
+          alert("Seuls les comptes client peuvent déposer une demande.");
+          return;
+        }
+        setSubmitting(true);
+        setStatus("Match en cours");
+        const formData = new FormData(requestForm);
+        const checklist = Array.from(checklistContainer?.querySelectorAll("input[type='checkbox']") || [])
+          .map((checkbox) => ({
+            label: checkbox.dataset.item,
+            checked: checkbox.checked
+          }));
+        const questionnaire = {
+          urgency: formData.get("urgency"),
+          collaboration: formData.get("collab"),
+          format: formData.get("format"),
+          quality: formData.get("quality")
+        };
+        const payload = {
+          client_user_id: user.id,
+          title: formData.get("title").toString().trim(),
+          category: formData.get("category").toString().trim(),
+          budget: Number(formData.get("budget")),
+          deadline: formData.get("deadline").toString().trim(),
+          style: formData.get("style").toString().trim(),
+          skills: formData.get("skills").toString().trim(),
+          description: formData.get("description").toString().trim(),
+          questionnaire,
+          spec_checklist: checklist,
+          status: "match_en_cours"
+        };
+        const { data: inserted, error } = await supabaseClient.from("requests").insert(payload).select().maybeSingle();
+        if (error){
+          setSubmitting(false);
+          setStatus("Erreur");
+          alert(error.message);
+          return;
+        }
+        if (!inserted){
+          setSubmitting(false);
+          setStatus("Erreur");
+          alert("Demande envoyée mais la recommandation n'a pas pu être lancée.");
+          window.location.href = "dashboard.html";
+          return;
+        }
+        const matchResult = await runMatching(inserted, user.id);
+        setSubmitting(false);
+        setStatus(matchResult?.statusLabel || "Demande envoyée");
+        alert(matchResult?.message || "Demande envoyée ! Nous lançons la recommandation.");
+        clearDraft();
+        requestForm.reset();
+        window.location.href = "dashboard.html";
+      });
+    }
+
+    function normalizeSkills(skills){
+      if (!skills) return [];
+      return skills.toLowerCase().split(",").map((skill) => skill.trim()).filter(Boolean);
+    }
+
+    function computeScore(request, indep){
+      const requestSkills = normalizeSkills(request.skills).concat(normalizeSkills(request.category));
+      const indepSkills = normalizeSkills(indep.skills);
+      const shared = requestSkills.filter((skill) => indepSkills.includes(skill));
+      const skillScore = shared.length * 15;
+      const experienceScore = indep.experience?.toLowerCase().includes("senior") ? 12 : 6;
+      const budget = Number(request.budget || 0);
+      const rate = Number(indep.daily_rate || 0);
+      const budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
+      return Math.round(skillScore + experienceScore + budgetFit);
+    }
+
+    async function runMatching(request, userId){
+      const { data: indeps } = await supabaseClient
+        .from("independants")
+        .select("user_id, firstname, lastname, skills, daily_rate, status, experience")
+        .in("status", ["en_ligne", "disponible", "online"]);
+      if (!indeps || indeps.length === 0){
+        await supabaseClient
+          .from("requests")
+          .update({ status: "en_attente", match_summary: "Aucun indépendant disponible pour le moment. Votre demande reste en attente." })
+          .eq("id", request.id)
+          .eq("client_user_id", userId);
+        return {
+          statusLabel: "En attente",
+          message: "Demande envoyée. Aucun indépendant en ligne pour le moment, nous vous avertirons dès qu'il y en a un."
+        };
+      }
+      const ranked = indeps.map((indep) => ({
+        indep,
+        score: computeScore(request, indep)
+      })).sort((a, b) => b.score - a.score);
+      const top = ranked[0];
+      const matchSummary = `Match basé sur ${top.score} points (compétences et budget).`;
+      const initialPrice = Number(request.budget || 0) || null;
+      await supabaseClient
+        .from("requests")
+        .update({
+          assigned_indep_user_id: top.indep.user_id,
+          status: "negociation",
+          match_score: top.score,
+          match_summary: matchSummary,
+          negotiated_price: initialPrice
+        })
+        .eq("id", request.id)
+        .eq("client_user_id", userId);
+      const matchesPayload = ranked.slice(0, 3).map((entry, index) => ({
+        request_id: request.id,
+        indep_user_id: entry.indep.user_id,
+        score: entry.score,
+        rank: index + 1
+      }));
+      if (matchesPayload.length > 0){
+        await supabaseClient.from("request_matches").insert(matchesPayload);
+      }
+      if (initialPrice){
+        await supabaseClient.from("request_messages").insert({
+          request_id: request.id,
+          sender_user_id: userId,
+          sender_role: "system",
+          channel: "instant",
+          body: `Proposition initiale : ${initialPrice} € (ajustable avant validation).`
+        });
+      }
+      return {
+        statusLabel: "Match trouvé",
+        message: `Nous avons trouvé un indépendant en ligne. Proposition initiale : ${initialPrice || "à définir"} €.`
+      };
+    }
+  </script>
+</body>
+</html>

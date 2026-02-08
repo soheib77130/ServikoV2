@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Serviko — Tableau de bord client</title>
+  <meta name="description" content="Tableau de bord client Serviko." />
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#111827;
+      --muted:#9ca3af;
+      --text:#e5e7eb;
+      --accent:#22c55e;
+      --accent2:#60a5fa;
+      --radius:18px;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.16), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:1100px; margin:0 auto; padding:24px}
+    .nav{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display:grid; place-items:center; font-weight:900; color:#071018;
+    }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 12px; border-radius:14px; font-weight:800; cursor:pointer;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+    }
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: var(--shadow);
+    }
+    .cards2{display:grid; grid-template-columns: repeat(2, 1fr); gap:12px}
+    @media (max-width: 900px){ .cards2{grid-template-columns:1fr} }
+    .hint{color:var(--muted); font-weight:650}
+    .list{margin:0; padding:0; list-style:none; display:grid; gap:8px}
+    .pill{padding:6px 10px; border-radius:999px; background: rgba(96,165,250,.15); border:1px solid rgba(96,165,250,.22); font-weight:700; font-size:12px}
+    .panel{display:grid; gap:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="nav">
+      <a class="brand" href="index.html">
+        <div class="logo">S</div>
+        <div>Serviko</div>
+      </a>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <a class="btn" href="index.html#client">Retour à l'espace client</a>
+        <button class="btn" type="button" data-logout>Se déconnecter</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="card">
+        <h1>Tableau de bord client</h1>
+        <p class="hint">Résumé de vos prestations et demandes en cours (exemple statique).</p>
+      </div>
+
+      <div class="cards2">
+        <div class="card">
+          <h3>Demandes actives</h3>
+          <ul class="list" id="clientRequests">
+            <li>Chargement des demandes...</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Actions rapides</h3>
+          <div style="display:flex; gap:8px; flex-wrap:wrap">
+            <span class="pill">Simulation de paiement</span>
+            <button class="btn" type="button" id="relaunchMatchBtn">Relancer un indépendant</button>
+            <span class="pill">Télécharger une facture</span>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+            <a class="btn" href="request.html">Déposer une demande</a>
+            <button class="btn" type="button" id="supportBtn">Contacter le support</button>
+            <button class="btn" type="button" data-logout>Se déconnecter</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Messagerie & cahier des charges</h3>
+        <p class="hint" id="conversationHint">Sélectionnez une demande pour discuter avec l'indépendant.</p>
+        <div class="panel" style="grid-template-columns: 1.2fr 2fr; gap:16px">
+          <div>
+            <h4>Vos demandes</h4>
+            <ul class="list" id="conversationList">
+              <li>Chargement des demandes...</li>
+            </ul>
+          </div>
+          <div class="card" style="background:rgba(17,24,39,.7)">
+            <h4 id="conversationTitle">Discussion</h4>
+            <div class="pill" id="conversationStatus">—</div>
+            <div style="margin-top:12px">
+              <h5>Cahier des charges</h5>
+              <div class="list" id="specChecklist">Sélectionnez une demande.</div>
+              <p class="hint">Paiement simulé : le prix est finalisé ici avant mise en production.</p>
+              <div class="panel" style="margin-top:12px">
+                <input type="number" id="negotiatedPrice" placeholder="Prix convenu (€)" min="0" />
+                <button class="btn" type="button" id="saveSpecBtn">Mettre à jour</button>
+                <button class="btn primary" type="button" id="confirmSpecBtn">Confirmer et passer au fil principal</button>
+              </div>
+            </div>
+            <div style="margin-top:16px">
+              <h5>Messages</h5>
+              <div class="list" id="messageList">Aucun message.</div>
+              <div style="margin-top:12px; display:flex; gap:8px">
+                <input type="text" id="messageInput" placeholder="Écrire un message..." />
+                <button class="btn primary" type="button" id="sendMessage">Envoyer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://skfqoyyoahuaffshimnc.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_yxLCOU94zhGck9yvGYch5Q_ePCPd9Yq";
+    const supportBtn = document.getElementById("supportBtn");
+    const relaunchMatchBtn = document.getElementById("relaunchMatchBtn");
+    const logoutButtons = Array.from(document.querySelectorAll("[data-logout]"));
+    const header = document.querySelector("h1");
+    const clientRequests = document.getElementById("clientRequests");
+    const conversationList = document.getElementById("conversationList");
+    const conversationTitle = document.getElementById("conversationTitle");
+    const conversationStatus = document.getElementById("conversationStatus");
+    const conversationHint = document.getElementById("conversationHint");
+    const specChecklist = document.getElementById("specChecklist");
+    const negotiatedPrice = document.getElementById("negotiatedPrice");
+    const saveSpecBtn = document.getElementById("saveSpecBtn");
+    const confirmSpecBtn = document.getElementById("confirmSpecBtn");
+    const messageList = document.getElementById("messageList");
+    const messageInput = document.getElementById("messageInput");
+    const sendMessage = document.getElementById("sendMessage");
+    let currentRequest = null;
+    let currentUserId = null;
+    const supabaseClient = window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        storage: window.localStorage
+      }
+    });
+
+    async function hydrateProfile(){
+      if (!supabaseClient) return;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const user = session?.user;
+      if (!user){
+        window.location.href = "login.html";
+        return;
+      }
+      currentUserId = user.id;
+      if (user.user_metadata?.role && user.user_metadata.role !== "client"){
+        await supabaseClient.auth.signOut();
+        window.location.href = "login.html";
+        return;
+      }
+      const { data } = await supabaseClient
+        .from("clients")
+        .select("firstname, lastname")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const name = [data?.firstname, data?.lastname].filter(Boolean).join(" ");
+      if (header){
+        header.textContent = name ? `Tableau de bord de ${name}` : "Tableau de bord client";
+      }
+      await refreshRequests(user.id);
+      await attemptAutoMatch(user.id);
+    }
+
+    hydrateProfile();
+
+    if (supportBtn){
+      supportBtn.addEventListener("click", () => {
+        alert("Support contacté (démo). Nous revenons vers vous rapidement.");
+      });
+    }
+
+    if (relaunchMatchBtn){
+      relaunchMatchBtn.addEventListener("click", async () => {
+        if (!currentUserId) return;
+        const target = currentRequest?.status === "en_attente"
+          ? currentRequest
+          : await fetchLatestPending(currentUserId);
+        if (!target){
+          alert("Aucune demande en attente à relancer.");
+          return;
+        }
+        const result = await runMatching(target, currentUserId);
+        alert(result?.message || "Matching relancé.");
+        await refreshRequests(currentUserId);
+      });
+    }
+
+    async function handleLogout(){
+      try {
+        if (supabaseClient){
+          await supabaseClient.auth.signOut();
+        }
+      } catch (error){
+        console.warn("Erreur de déconnexion", error);
+      } finally {
+        Object.keys(window.localStorage || {}).forEach((key) => {
+          if (key.includes("sb-") && key.includes("-auth-token")){
+            window.localStorage.removeItem(key);
+          }
+        });
+        alert("Vous êtes déconnecté.");
+        window.location.href = "index.html";
+      }
+    }
+
+    if (logoutButtons.length){
+      logoutButtons.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          handleLogout();
+        });
+      });
+    }
+
+    async function loadConversation(requestId, userId){
+      if (!supabaseClient) return;
+      const { data: request } = await supabaseClient
+        .from("requests")
+        .select("id, title, status, spec_checklist, negotiated_price, match_summary")
+        .eq("id", requestId)
+        .eq("client_user_id", userId)
+        .maybeSingle();
+      if (!request) return;
+      currentRequest = request;
+      if (conversationTitle) conversationTitle.textContent = request.title || "Discussion";
+      if (conversationStatus) conversationStatus.textContent = request.status || "nouveau";
+      if (conversationHint){
+        if (request.status === "en_attente"){
+          conversationHint.textContent = "Votre demande est en attente d'un indépendant disponible. Nous relançons automatiquement le matching.";
+        } else if (request.status === "negociation"){
+          conversationHint.textContent = request.match_summary || "Messagerie instantanée pour cadrer le prix et le cahier des charges.";
+        } else {
+          conversationHint.textContent = "Fil principal après validation du cahier des charges.";
+        }
+      }
+      renderChecklist(request.spec_checklist || []);
+      if (negotiatedPrice) negotiatedPrice.value = request.negotiated_price || "";
+      await loadMessages(request.id, request.status);
+    }
+
+    function renderChecklist(items){
+      if (!specChecklist) return;
+      if (!items || items.length === 0){
+        specChecklist.textContent = "Aucun cahier des charges enregistré.";
+        return;
+      }
+      specChecklist.innerHTML = items.map((item, index) => (
+        `<label style="display:flex; gap:8px; align-items:center;">
+          <input type="checkbox" data-index="${index}" ${item.checked ? "checked" : ""}/>
+          ${item.label}
+        </label>`
+      )).join("");
+    }
+
+    async function loadMessages(requestId, status){
+      if (!messageList) return;
+      const channel = status === "confirme" ? "fil" : "instant";
+      const { data: messages, error } = await supabaseClient
+        .from("request_messages")
+        .select("sender_role, body, created_at")
+        .eq("request_id", requestId)
+        .eq("channel", channel)
+        .order("created_at", { ascending: true });
+      if (error){
+        messageList.innerHTML = "<div class='hint'>Impossible de charger les messages.</div>";
+        return;
+      }
+      if (!messages || messages.length === 0){
+        messageList.innerHTML = "<div class='hint'>Aucun message pour le moment.</div>";
+        return;
+      }
+      messageList.innerHTML = messages.map((msg) => (
+        `<div><strong>${msg.sender_role}</strong> — ${msg.body}</div>`
+      )).join("");
+    }
+
+    if (saveSpecBtn){
+      saveSpecBtn.addEventListener("click", async () => {
+        if (!currentRequest || !supabaseClient) return;
+        const checklist = Array.from(specChecklist?.querySelectorAll("input[type='checkbox']") || [])
+          .map((checkbox) => ({
+            label: checkbox.parentElement?.textContent?.trim() || "",
+            checked: checkbox.checked
+          }));
+        const price = negotiatedPrice?.value ? Number(negotiatedPrice.value) : null;
+        await supabaseClient
+          .from("requests")
+          .update({ spec_checklist: checklist, negotiated_price: price })
+          .eq("id", currentRequest.id);
+        alert("Cahier des charges mis à jour.");
+      });
+    }
+
+    if (confirmSpecBtn){
+      confirmSpecBtn.addEventListener("click", async () => {
+        if (!currentRequest || !supabaseClient) return;
+        const agreedPrice = negotiatedPrice?.value ? Number(negotiatedPrice.value) : null;
+        if (!agreedPrice){
+          alert("Merci d'indiquer un prix convenu avant de confirmer.");
+          return;
+        }
+        await supabaseClient
+          .from("requests")
+          .update({ status: "confirme", negotiated_price: agreedPrice })
+          .eq("id", currentRequest.id);
+        currentRequest.status = "confirme";
+        if (conversationStatus) conversationStatus.textContent = "confirme";
+        await loadMessages(currentRequest.id, currentRequest.status);
+        alert("Cahier des charges confirmé. La conversation passe au fil principal.");
+      });
+    }
+
+    if (sendMessage){
+      sendMessage.addEventListener("click", async () => {
+        if (!currentRequest || !supabaseClient || !messageInput?.value) return;
+        const channel = currentRequest.status === "confirme" ? "fil" : "instant";
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const user = session?.user;
+        if (!user) return;
+        const { error } = await supabaseClient
+          .from("request_messages")
+          .insert({
+            request_id: currentRequest.id,
+            sender_user_id: user.id,
+            sender_role: "client",
+            channel,
+            body: messageInput.value.trim()
+          });
+        if (!error){
+          messageInput.value = "";
+          await loadMessages(currentRequest.id, currentRequest.status);
+        }
+      });
+    }
+
+    function formatStatus(status){
+      const map = {
+        match_en_cours: "Match en cours",
+        en_attente: "En attente",
+        negociation: "Négociation",
+        confirme: "Confirmé"
+      };
+      return map[status] || status || "nouveau";
+    }
+
+    async function refreshRequests(userId){
+      if (!clientRequests) return;
+      const { data: requests, error } = await supabaseClient
+        .from("requests")
+        .select("id, title, status, created_at, match_summary, negotiated_price, assigned_indep_user_id, budget, skills, category")
+        .eq("client_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (error){
+        clientRequests.innerHTML = "<li>Impossible de charger les demandes.</li>";
+        return;
+      }
+      if (!requests || requests.length === 0){
+        clientRequests.innerHTML = "<li>Aucune demande en cours.</li>";
+        return;
+      }
+      clientRequests.innerHTML = requests.map((item) => (
+        `<li><strong>${item.title}</strong> — ${formatStatus(item.status)}</li>`
+      )).join("\\n");
+      if (conversationList){
+        conversationList.innerHTML = requests.map((item) => (
+          `<li><button class="btn" data-request="${item.id}">${item.title}</button><div class="hint">${item.match_summary || formatStatus(item.status)}</div></li>`
+        )).join("\\n");
+        conversationList.querySelectorAll("button[data-request]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const requestId = Number(btn.dataset.request);
+            loadConversation(requestId, userId);
+          });
+        });
+      }
+      return requests;
+    }
+
+    async function fetchLatestPending(userId){
+      const { data } = await supabaseClient
+        .from("requests")
+        .select("id, title, status, budget, skills, category")
+        .eq("client_user_id", userId)
+        .eq("status", "en_attente")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    }
+
+    function normalizeSkills(skills){
+      if (!skills) return [];
+      return skills.toLowerCase().split(",").map((skill) => skill.trim()).filter(Boolean);
+    }
+
+    function computeScore(request, indep){
+      const requestSkills = normalizeSkills(request.skills).concat(normalizeSkills(request.category));
+      const indepSkills = normalizeSkills(indep.skills);
+      const shared = requestSkills.filter((skill) => indepSkills.includes(skill));
+      const skillScore = shared.length * 15;
+      const experienceScore = indep.experience?.toLowerCase().includes("senior") ? 12 : 6;
+      const budget = Number(request.budget || 0);
+      const rate = Number(indep.daily_rate || 0);
+      const budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
+      return Math.round(skillScore + experienceScore + budgetFit);
+    }
+
+    async function runMatching(request, userId){
+      const { data: indeps } = await supabaseClient
+        .from("independants")
+        .select("user_id, firstname, lastname, skills, daily_rate, status, experience")
+        .in("status", ["en_ligne", "disponible", "online"]);
+      if (!indeps || indeps.length === 0){
+        await supabaseClient
+          .from("requests")
+          .update({ status: "en_attente", match_summary: "Aucun indépendant disponible pour le moment. Votre demande reste en attente." })
+          .eq("id", request.id)
+          .eq("client_user_id", userId);
+        return {
+          statusLabel: "En attente",
+          message: "Aucun indépendant disponible pour le moment. La demande reste en attente."
+        };
+      }
+      const ranked = indeps.map((indep) => ({
+        indep,
+        score: computeScore(request, indep)
+      })).sort((a, b) => b.score - a.score);
+      const top = ranked[0];
+      const matchSummary = `Match basé sur ${top.score} points (compétences et budget).`;
+      const initialPrice = Number(request.budget || 0) || null;
+      await supabaseClient
+        .from("requests")
+        .update({
+          assigned_indep_user_id: top.indep.user_id,
+          status: "negociation",
+          match_score: top.score,
+          match_summary: matchSummary,
+          negotiated_price: initialPrice
+        })
+        .eq("id", request.id)
+        .eq("client_user_id", userId);
+      const matchesPayload = ranked.slice(0, 3).map((entry, index) => ({
+        request_id: request.id,
+        indep_user_id: entry.indep.user_id,
+        score: entry.score,
+        rank: index + 1
+      }));
+      if (matchesPayload.length > 0){
+        await supabaseClient.from("request_matches").insert(matchesPayload);
+      }
+      if (initialPrice){
+        await supabaseClient.from("request_messages").insert({
+          request_id: request.id,
+          sender_user_id: userId,
+          sender_role: "system",
+          channel: "instant",
+          body: `Proposition initiale : ${initialPrice} € (ajustable avant validation).`
+        });
+      }
+      return {
+        statusLabel: "Match trouvé",
+        message: `Un indépendant est en ligne. Proposition initiale : ${initialPrice || "à définir"} €.`
+      };
+    }
+
+    async function attemptAutoMatch(userId){
+      const { data: pending } = await supabaseClient
+        .from("requests")
+        .select("id, title, status, budget, skills, category, assigned_indep_user_id")
+        .eq("client_user_id", userId)
+        .in("status", ["en_attente", "match_en_cours"]);
+      if (!pending || pending.length === 0) return;
+      const pendingWithoutMatch = pending.filter((item) => !item.assigned_indep_user_id);
+      if (pendingWithoutMatch.length === 0) return;
+      for (const request of pendingWithoutMatch){
+        await runMatching(request, userId);
+      }
+      await refreshRequests(userId);
+    }
+  </script>
+</body>
+</html>

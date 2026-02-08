@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Serviko — Email validé</title>
+  <meta name="description" content="Confirmation email Serviko." />
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#111827;
+      --muted:#9ca3af;
+      --text:#e5e7eb;
+      --accent:#22c55e;
+      --accent2:#60a5fa;
+      --radius:18px;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.16), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:880px; margin:0 auto; padding:24px}
+    .nav{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display:grid; place-items:center; font-weight:900; color:#071018;
+    }
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      border-radius: var(--radius);
+      padding:20px;
+      box-shadow: var(--shadow);
+    }
+    .card h1{margin:0 0 6px; font-size:28px}
+    .hint{color:var(--muted); font-weight:650; margin:0 0 16px}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:12px 14px; border-radius:14px; font-weight:800; cursor:pointer;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+    }
+    .btn.primary{
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-color: transparent; color:#061019;
+    }
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="nav">
+      <a class="brand" href="index.html">
+        <div class="logo">S</div>
+        <div>Serviko</div>
+      </a>
+      <a class="btn" href="index.html">Retour à l'accueil</a>
+    </header>
+
+    <section class="card">
+      <h1>Email validé ✅</h1>
+      <p class="hint">Votre email est confirmé. Vous pouvez accéder à votre espace personnel.</p>
+      <div class="actions">
+        <a class="btn primary" href="dashboard.html">Aller à l'espace client</a>
+        <a class="btn" href="indep-dashboard.html">Aller à l'espace indépendant</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Serviko — Services indépendants, simplement</title>
+  <meta name="description" content="Serviko : commandez un service auprès d'indépendants en quelques clics. Seulement 2% de frais." />
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#111827;
+      --muted:#9ca3af;
+      --text:#e5e7eb;
+      --line:#1f2937;
+      --accent:#22c55e;
+      --accent2:#60a5fa;
+      --danger:#fb7185;
+      --radius:18px;
+      --shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.16), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    a{color:inherit; text-decoration:none}
+    .container{max-width:1100px; margin:0 auto; padding:22px}
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; padding:10px 0 6px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+    }
+    .logo{
+      width:36px; height:36px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      box-shadow: 0 10px 24px rgba(96,165,250,.2);
+      display:grid; place-items:center;
+      font-weight:900; color:#071018;
+      overflow:hidden;
+    }
+    .logo svg{width:100%; height:100%; display:block}
+    .navlinks{display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-weight:600}
+    .navlinks a{padding:8px 10px; border-radius:12px}
+    .navlinks a:hover{background:rgba(255,255,255,.06); color:var(--text)}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border:1px solid rgba(255,255,255,.10);
+      border-radius:999px; color:var(--text); background:rgba(17,24,39,.65);
+      backdrop-filter: blur(8px);
+      font-weight:700;
+    }
+    .pill .dot{
+      width:8px; height:8px; border-radius:999px; background:var(--accent);
+      box-shadow: 0 0 0 4px rgba(34,197,94,.15);
+    }
+
+    .hero{
+      margin-top:18px;
+      background: linear-gradient(180deg, rgba(17,24,39,.78), rgba(17,24,39,.56));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:28px;
+      overflow:hidden;
+      position:relative;
+    }
+    .hero:before{
+      content:"";
+      position:absolute; inset:-1px;
+      background: radial-gradient(900px 260px at 20% 0%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(800px 280px at 85% 10%, rgba(34,197,94,.16), transparent 55%);
+      pointer-events:none;
+    }
+    .hero > *{position:relative}
+    .heroGrid{display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; align-items:start}
+    @media (max-width: 900px){ .heroGrid{grid-template-columns:1fr} }
+    .fadeUp{animation: fadeUp .6s ease both}
+    .fadeUp.delay-1{animation-delay:.1s}
+    .fadeUp.delay-2{animation-delay:.2s}
+    .fadeUp.delay-3{animation-delay:.3s}
+    @keyframes fadeUp{
+      from{opacity:0; transform: translateY(8px)}
+      to{opacity:1; transform: translateY(0)}
+    }
+
+    h1{
+      margin:14px 0 8px;
+      font-size: clamp(30px, 3.4vw, 54px);
+      line-height:1.05;
+      letter-spacing:-.6px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: clamp(14px, 1.15vw, 18px);
+      margin: 0 0 18px;
+      max-width: 60ch;
+    }
+    .ctaRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px}
+    .serviceRow{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px}
+    .serviceTag{
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      font-weight:700; color:var(--text);
+      transition: transform .2s ease, border-color .2s ease;
+    }
+    .serviceTag:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.2)}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      padding:12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      user-select:none;
+    }
+    .btn:hover{background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.16)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-color: rgba(255,255,255,.0);
+      color:#061019;
+    }
+    .btn.primary:hover{filter: brightness(1.03)}
+    .kpiCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,22,.35);
+      border-radius: var(--radius);
+      padding:18px;
+      display:grid; gap:10px;
+      backdrop-filter: blur(8px);
+    }
+    .valueList{display:grid; gap:10px; margin-top:12px}
+    .valueItem{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      font-weight:700;
+    }
+    .valueItem span{
+      width:22px; height:22px; border-radius:8px;
+      display:grid; place-items:center;
+      background: rgba(96,165,250,.12);
+      border:1px solid rgba(96,165,250,.18);
+      flex:0 0 auto;
+      font-size:14px;
+    }
+    .kpiTop{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .badge2{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.22);
+      color: #baf7cd;
+      font-weight:900;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .badge2 small{opacity:.85; font-weight:800}
+    .bigNum{font-size: 44px; font-weight: 950; letter-spacing:-.8px}
+    .kpiText{color:var(--muted); font-weight:650}
+    .kpiList{display:grid; gap:8px; margin-top:6px}
+    .check{
+      display:flex; gap:10px; align-items:flex-start;
+      color: var(--text);
+      font-weight:700;
+    }
+    .check span{
+      width:22px; height:22px; border-radius:8px;
+      display:grid; place-items:center;
+      background: rgba(96,165,250,.12);
+      border:1px solid rgba(96,165,250,.18);
+      flex: 0 0 auto;
+      margin-top:1px;
+      font-size:14px;
+    }
+    .check em{color:var(--muted); font-style:normal; font-weight:650}
+
+    .section{margin-top:22px}
+    .sectionTitle{
+      display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      margin: 0 0 10px;
+    }
+    .sectionTitle h2{
+      margin:0;
+      font-size: 20px;
+      letter-spacing:-.2px;
+    }
+    .hint{color:var(--muted); font-weight:650}
+
+    .grid5{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 980px){ .grid5{grid-template-columns: repeat(2, 1fr)} }
+    @media (max-width: 640px){ .grid5{grid-template-columns: 1fr} }
+
+    .cat{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.55);
+      border-radius: 18px;
+      padding:14px;
+      min-height: 110px;
+      display:flex; flex-direction:column; gap:10px;
+      cursor:pointer;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .cat:hover{
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.2);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 26px rgba(0,0,0,.25);
+    }
+    .cat:active{transform: translateY(1px)}
+    .catTop{display:flex; align-items:center; justify-content:space-between; gap:10px}
+    .icon{
+      width:36px; height:36px; border-radius:14px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      font-size:18px;
+    }
+    .cat h3{margin:0; font-size:15px; letter-spacing:-.15px}
+    .cat p{margin:0; color:var(--muted); font-weight:650; font-size:13px}
+
+    .searchBar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin: 6px 0 12px;
+    }
+    .searchBar input{
+      flex: 1 1 220px;
+      padding:12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.55);
+      color:var(--text);
+      font-weight:650;
+    }
+    .searchMeta{color:var(--muted); font-weight:700}
+
+    .cards2{
+      display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
+    }
+    @media (max-width: 900px){ .cards2{grid-template-columns:1fr} }
+
+    .clientGrid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:12px;
+    }
+    @media (max-width: 980px){ .clientGrid{grid-template-columns: repeat(2, 1fr)} }
+    @media (max-width: 640px){ .clientGrid{grid-template-columns: 1fr} }
+
+    .clientCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.52);
+      border-radius: var(--radius);
+      padding:18px;
+      display:grid; gap:10px;
+    }
+    .clientCard h3{margin:0; font-size:18px}
+    .clientCard p{margin:0; color:var(--muted); font-weight:650}
+
+    .note{
+      border:1px dashed rgba(96,165,250,.4);
+      background: rgba(96,165,250,.08);
+      border-radius: 16px;
+      padding:14px 16px;
+      color:#cfe6ff;
+      font-weight:700;
+    }
+
+    .splitIntro{
+      display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;
+    }
+    @media (max-width: 900px){ .splitIntro{grid-template-columns:1fr} }
+    .splitCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.52);
+      border-radius: var(--radius);
+      padding:18px;
+      display:grid; gap:12px;
+    }
+    .splitHeader{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .splitHeader strong{font-size:18px}
+    .chip{
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.22);
+      color:#c8f5d7;
+      font-weight:800;
+      font-size:12px;
+    }
+
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.50);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+    }
+    .card h3{margin:0 0 6px; font-size:18px; letter-spacing:-.2px}
+    .card ul{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:8px}
+    .card li{color:var(--text); font-weight:700}
+    .card li small{color:var(--muted); font-weight:650}
+    .card .btn{margin-top:12px}
+
+    .how{
+      display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+    }
+    @media (max-width: 900px){ .how{grid-template-columns:1fr} }
+
+    .step{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,22,.30);
+      border-radius: var(--radius);
+      padding:16px;
+    }
+    .stepNum{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:34px; height:34px; border-radius:12px;
+      background: rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.22);
+      font-weight:950;
+      margin-bottom:10px;
+    }
+    .step h3{margin:0 0 6px}
+    .step p{margin:0; color:var(--muted); font-weight:650}
+
+    .flow{
+      display:grid; gap:12px;
+    }
+    .flowCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(17,24,39,.48);
+      border-radius: 18px;
+      padding:16px;
+      display:grid; gap:10px;
+    }
+    .flowSteps{
+      display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;
+    }
+    @media (max-width: 980px){ .flowSteps{grid-template-columns: repeat(2, 1fr)} }
+    @media (max-width: 640px){ .flowSteps{grid-template-columns: 1fr} }
+    .flowStep{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(10,14,22,.30);
+      border-radius: 16px;
+      padding:14px;
+      display:grid; gap:8px;
+    }
+
+    .qcm{
+      display:grid; gap:12px;
+    }
+    .qcmRow{
+      display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    }
+    @media (max-width: 640px){ .qcmRow{grid-template-columns: 1fr} }
+    .qcmLabel{color:var(--muted); font-weight:700; font-size:13px}
+    .qcmOptions{display:flex; gap:8px; flex-wrap:wrap}
+    .qcmOptions button{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.55);
+      color:var(--text);
+      font-weight:700;
+      cursor:pointer;
+    }
+    .qcmOptions button.active{
+      border-color: rgba(96,165,250,.35);
+      background: rgba(96,165,250,.18);
+    }
+
+    .calc{
+      display:grid; gap:10px;
+    }
+    .calcRow{
+      display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center;
+    }
+    .calcRow input{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.6);
+      color:var(--text);
+      font-weight:700;
+    }
+    .calcResult{
+      padding:10px 12px;
+      border-radius: 12px;
+      background: rgba(34,197,94,.12);
+      border:1px solid rgba(34,197,94,.22);
+      color:#c8f5d7;
+      font-weight:800;
+    }
+
+    .faq{
+      display:grid; gap:10px;
+    }
+    .faqItem{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      background: rgba(17,24,39,.45);
+      overflow:hidden;
+    }
+    .faqQuestion{
+      width:100%;
+      background:none;
+      color:var(--text);
+      border:0;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .faqAnswer{
+      display:none;
+      padding:0 16px 14px;
+      color:var(--muted);
+      font-weight:650;
+    }
+    .faqItem.open .faqAnswer{display:block}
+
+    .formGrid{
+      display:grid; gap:10px;
+    }
+    .formGrid input,
+    .formGrid textarea{
+      width:100%;
+      padding:12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.6);
+      color:var(--text);
+      font-weight:650;
+      font-family: inherit;
+    }
+    .formGrid textarea{min-height:120px; resize:vertical}
+
+    footer{
+      margin:26px 0 10px;
+      padding:18px 0 0;
+      border-top: 1px solid rgba(255,255,255,.08);
+      color: var(--muted);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      font-weight:650;
+    }
+    footer .links{display:flex; gap:12px; flex-wrap:wrap}
+    footer .links a{padding:8px 10px; border-radius:12px}
+    footer .links a:hover{background: rgba(255,255,255,.06); color:var(--text)}
+
+    /* petit modal (optionnel) */
+    .modalBackdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      z-index:99;
+    }
+    .modal{
+      width:min(560px, 100%);
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.92);
+      box-shadow: var(--shadow);
+      padding:16px;
+      backdrop-filter: blur(10px);
+    }
+    .modalHeader{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+    .modal h3{margin:0}
+    .modal p{margin:8px 0 0; color:var(--muted); font-weight:650}
+    .close{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius: 12px;
+      padding:8px 10px;
+      cursor:pointer;
+      font-weight:800;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- NAV -->
+    <header class="nav">
+      <a class="brand" href="#top" aria-label="Serviko">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img" aria-label="Serviko logo">
+            <defs>
+              <linearGradient id="servikoGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="100%" stop-color="#22c55e"/>
+              </linearGradient>
+            </defs>
+            <rect width="48" height="48" rx="12" fill="url(#servikoGradient)"></rect>
+            <text x="24" y="31" text-anchor="middle" font-size="22" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#071018">S</text>
+          </svg>
+        </div>
+        <div>Serviko</div>
+      </a>
+
+      <nav class="navlinks" aria-label="Navigation">
+        <a href="#categories">Services</a>
+        <a href="#comment">Comment ça marche</a>
+        <a href="#pourquoi">Pourquoi Serviko</a>
+        <a href="signup.html">Espace client</a>
+        <a href="indep-signup.html">Espace indépendant</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <!-- HERO -->
+    <main id="top" class="hero">
+      <div class="heroGrid">
+        <div>
+          <span class="pill fadeUp"><span class="dot"></span> Services indépendants, en 2 minutes</span>
+          <h1 class="fadeUp delay-1">Un service clair.<br/>Un indépendant adapté.</h1>
+          <p class="sub fadeUp delay-2">
+            Dites ce dont vous avez besoin, Serviko trouve le meilleur indépendant disponible.
+            <strong>2% de commission</strong> pour une livraison sécurisée et validée par un admin.
+          </p>
+
+          <div class="serviceRow fadeUp delay-2">
+            <span class="serviceTag">Site web</span>
+            <span class="serviceTag">Logo & design</span>
+            <span class="serviceTag">Vidéo & montage</span>
+            <span class="serviceTag">Rédaction</span>
+            <span class="serviceTag">Marketing</span>
+          </div>
+
+          <div class="ctaRow fadeUp delay-3">
+            <a class="btn primary" href="request.html">Déposer une demande</a>
+            <a class="btn" href="#categories">Voir les services</a>
+          </div>
+        </div>
+
+        <aside class="kpiCard fadeUp delay-2" aria-label="Pourquoi Serviko">
+          <div class="kpiTop">
+            <div class="badge2">✅ <small>Commission</small> 2%</div>
+            <div style="color:var(--muted); font-weight:800">Sécurisé</div>
+          </div>
+          <div class="bigNum">2%</div>
+          <div class="kpiText">Seulement 2% pour une mise en relation rapide et sûre.</div>
+
+          <div class="valueList">
+            <div class="valueItem"><span>✓</span> <div>Livraison sécurisée : <em>validation par un admin avant paiement.</em></div></div>
+            <div class="valueItem"><span>✓</span> <div>Matching intelligent : <em>le meilleur indépendant pour votre demande.</em></div></div>
+            <div class="valueItem"><span>✓</span> <div>Simple & rapide : <em>déposez, échangez, lancez.</em></div></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- CATEGORIES -->
+    <section id="categories" class="section">
+      <div class="sectionTitle">
+        <h2>Services disponibles</h2>
+        <div class="hint">Choisissez directement votre besoin.</div>
+      </div>
+
+      <div class="grid5" role="list">
+        <button class="cat" type="button" data-cat="Site Web" role="listitem">
+          <div class="catTop">
+            <div class="icon">🌐</div>
+            <div style="opacity:.7">›</div>
+          </div>
+          <h3>Site Web</h3>
+          <p>Vitrine, e-commerce, landing.</p>
+        </button>
+
+        <button class="cat" type="button" data-cat="Logo & Design" role="listitem">
+          <div class="catTop">
+            <div class="icon">🎨</div>
+            <div style="opacity:.7">›</div>
+          </div>
+          <h3>Logo & Design</h3>
+          <p>Logo, branding, visuels.</p>
+        </button>
+
+        <button class="cat" type="button" data-cat="Vidéo & Montage" role="listitem">
+          <div class="catTop">
+            <div class="icon">🎥</div>
+            <div style="opacity:.7">›</div>
+          </div>
+          <h3>Vidéo & Montage</h3>
+          <p>Montage, shorts, pub.</p>
+        </button>
+
+        <button class="cat" type="button" data-cat="Rédaction" role="listitem">
+          <div class="catTop">
+            <div class="icon">✍️</div>
+            <div style="opacity:.7">›</div>
+          </div>
+          <h3>Rédaction</h3>
+          <p>Articles, SEO, pages web.</p>
+        </button>
+
+        <button class="cat" type="button" data-cat="Autres services" role="listitem">
+          <div class="catTop">
+            <div class="icon">⚙️</div>
+            <div style="opacity:.7">›</div>
+          </div>
+          <h3>Autres services</h3>
+          <p>Tout le reste, simple.</p>
+        </button>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="comment" class="section">
+      <div class="sectionTitle">
+        <h2>Comment ça marche</h2>
+        <div class="hint">3 étapes. Pas plus.</div>
+      </div>
+
+      <div class="how">
+        <div class="step">
+          <div class="stepNum">1</div>
+          <h3>Choisissez</h3>
+          <p>Vous cliquez sur une catégorie et trouvez l’indépendant adapté.</p>
+        </div>
+        <div class="step">
+          <div class="stepNum">2</div>
+          <h3>Discutez</h3>
+          <p>Échange direct, besoin clair, délai clair. Sans détour.</p>
+        </div>
+        <div class="step">
+          <div class="stepNum">3</div>
+          <h3>Payez & recevez</h3>
+          <p>Paiement sécurisé. Vous recevez la prestation. Terminé.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHY -->
+    <section id="pourquoi" class="section">
+      <div class="sectionTitle">
+        <h2>Pourquoi Serviko ?</h2>
+        <div class="hint">La différence : les frais.</div>
+      </div>
+
+      <div class="cards2">
+        <div class="card">
+          <h3>Seulement 2% de commission</h3>
+          <div class="hint">Là où d’autres plateformes prennent souvent 10–20%.</div>
+          <ul>
+            <li>✅ <small>Pas d’abonnement</small></li>
+            <li>✅ <small>Pas de frais cachés</small></li>
+            <li>✅ <small>Transparence totale</small></li>
+          </ul>
+          <a class="btn" href="#top">Revenir aux catégories</a>
+        </div>
+
+        <div id="pro" class="card">
+          <h3>Pour les indépendants</h3>
+          <div class="hint">Travaillez librement. Gardez votre argent.</div>
+          <ul>
+            <li>✅ <small>Publiez vos services gratuitement</small></li>
+            <li>✅ <small>Fixez vos prix</small></li>
+            <li>✅ <small>Vous gardez 98% de vos gains</small></li>
+          </ul>
+          <a class="btn primary" href="indep-signup.html">Devenir indépendant sur Serviko</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" class="section">
+      <div class="sectionTitle">
+        <h2>Contact</h2>
+        <div class="hint">Une question ? Réponse simple.</div>
+      </div>
+
+      <div class="card">
+        <p class="sub" style="margin:0">
+          Écrivez-nous : <strong>contact@serviko.com</strong> (à remplacer)<br/>
+          Ou ajoutez ici un formulaire plus tard.
+        </p>
+        <form class="formGrid" id="contactForm">
+          <input type="text" name="name" placeholder="Votre nom" required />
+          <input type="email" name="email" placeholder="Votre email" required />
+          <textarea name="message" placeholder="Votre message (projet, budget, délai)"></textarea>
+          <button class="btn primary" type="submit">Envoyer une demande</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div><strong style="color:var(--text)">Serviko</strong> — Services indépendants, simplement. © <span id="year"></span></div>
+      <div class="links">
+        <a href="#top">Accueil</a>
+        <a href="#comment">Comment ça marche</a>
+        <a href="#pourquoi">2% de frais</a>
+        <a href="#contact">Contact</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Année
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Catégories (exemple : ouvrir une page / filtrer / afficher une liste)
+    const cats = document.querySelectorAll(".cat");
+    const contactForm = document.getElementById("contactForm");
+
+    if (contactForm){
+      contactForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        alert("Merci ! Nous revenons vers vous rapidement.");
+        contactForm.reset();
+      });
+    }
+  </script>
+</body>
+</html>

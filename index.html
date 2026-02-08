@@ -39,6 +39,15 @@
     a{color:inherit; text-decoration:none}
     ::selection{background:rgba(96,165,250,.35); color:#0b1220}
     .container{max-width:1100px; margin:0 auto; padding:22px}
+    .navWrap{
+      position:sticky; top:0; z-index:90;
+      background: rgba(11,15,23,.72);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      margin-top:12px;
+      border-radius: 18px;
+      padding:0 14px;
+    }
     .nav{
       display:flex; align-items:center; justify-content:space-between;
       gap:14px; padding:10px 0 6px;
@@ -603,6 +612,57 @@
     }
     .ctaCard h3{margin:0}
     .ctaCard p{margin:0; color:var(--muted); font-weight:650}
+    .heroPanel{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(13,18,28,.7);
+      border-radius: 20px;
+      padding:18px;
+      display:grid; gap:12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.35);
+    }
+    .heroPanelHeader{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      font-weight:800;
+    }
+    .heroPanelRow{
+      display:grid; gap:8px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      padding:12px;
+      background: rgba(17,24,39,.6);
+    }
+    .miniLabel{font-size:12px; color:var(--muted); font-weight:700}
+    .brandRow{
+      display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;
+      color:var(--muted); font-weight:700;
+    }
+    .brandRow span{
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(17,24,39,.4);
+    }
+    .featureGrid{
+      display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
+    }
+    @media (max-width: 980px){ .featureGrid{grid-template-columns: repeat(2, 1fr)} }
+    @media (max-width: 640px){ .featureGrid{grid-template-columns: 1fr} }
+    .featureCard{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.6);
+      border-radius: 18px;
+      padding:16px;
+      display:grid; gap:10px;
+    }
+    .featureCard strong{font-size:16px}
+    .featureCard p{margin:0; color:var(--muted); font-weight:650}
+    .emptyState{
+      display:none;
+      padding:12px 14px;
+      border-radius: 14px;
+      border:1px dashed rgba(255,255,255,.2);
+      color:var(--muted); font-weight:700;
+      margin-top:8px;
+    }
   </style>
 </head>
 
@@ -613,32 +673,34 @@
       <span>Besoin d’aide ? <a href="#contact">Contactez-nous</a></span>
     </div>
     <!-- NAV -->
-    <header class="nav">
-      <a class="brand" href="#top" aria-label="Serviko">
-        <div class="logo" aria-hidden="true">
-          <svg viewBox="0 0 48 48" role="img" aria-label="Serviko logo">
-            <defs>
-              <linearGradient id="servikoGradient" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#60a5fa"/>
-                <stop offset="100%" stop-color="#22c55e"/>
-              </linearGradient>
-            </defs>
-            <rect width="48" height="48" rx="12" fill="url(#servikoGradient)"></rect>
-            <text x="24" y="31" text-anchor="middle" font-size="22" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#071018">S</text>
-          </svg>
-        </div>
-        <div>Serviko</div>
-      </a>
+    <div class="navWrap">
+      <header class="nav">
+        <a class="brand" href="#top" aria-label="Serviko">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img" aria-label="Serviko logo">
+              <defs>
+                <linearGradient id="servikoGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#60a5fa"/>
+                  <stop offset="100%" stop-color="#22c55e"/>
+                </linearGradient>
+              </defs>
+              <rect width="48" height="48" rx="12" fill="url(#servikoGradient)"></rect>
+              <text x="24" y="31" text-anchor="middle" font-size="22" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="#071018">S</text>
+            </svg>
+          </div>
+          <div>Serviko</div>
+        </a>
 
-      <nav class="navlinks" aria-label="Navigation">
-        <a href="#categories">Services</a>
-        <a href="#comment">Comment ça marche</a>
-        <a href="#pourquoi">Pourquoi Serviko</a>
-        <a href="signup.html">Espace client</a>
-        <a href="indep-signup.html">Espace indépendant</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </header>
+        <nav class="navlinks" aria-label="Navigation">
+          <a href="#categories">Services</a>
+          <a href="#comment">Comment ça marche</a>
+          <a href="#pourquoi">Pourquoi Serviko</a>
+          <a href="signup.html">Espace client</a>
+          <a href="indep-signup.html">Espace indépendant</a>
+          <a href="#contact">Contact</a>
+        </nav>
+      </header>
+    </div>
 
     <!-- HERO -->
     <main id="top" class="hero">
@@ -685,14 +747,24 @@
           </div>
         </div>
 
-        <aside class="kpiCard fadeUp delay-2" aria-label="Pourquoi Serviko">
-          <div class="kpiTop">
+        <aside class="heroPanel fadeUp delay-2" aria-label="Pourquoi Serviko">
+          <div class="heroPanelHeader">
             <div class="badge2">✅ <small>Commission</small> 2%</div>
-            <div style="color:var(--muted); font-weight:800">Sécurisé</div>
+            <div class="miniLabel">Sécurisé</div>
           </div>
           <div class="bigNum">2%</div>
           <div class="kpiText">Seulement 2% pour une mise en relation rapide et sûre.</div>
 
+          <div class="heroPanelRow">
+            <div class="miniLabel">Suivi mission</div>
+            <strong>Dashboard temps réel</strong>
+            <span class="kpiText">Messages, statuts et validation centralisés.</span>
+          </div>
+          <div class="heroPanelRow">
+            <div class="miniLabel">Matching</div>
+            <strong>Profil indépendant filtré</strong>
+            <span class="kpiText">Compétences, budget et délai alignés.</span>
+          </div>
           <div class="valueList">
             <div class="valueItem"><span>✓</span> <div>Livraison sécurisée : <em>validation par un admin avant paiement.</em></div></div>
             <div class="valueItem"><span>✓</span> <div>Matching intelligent : <em>le meilleur indépendant pour votre demande.</em></div></div>
@@ -701,6 +773,14 @@
         </aside>
       </div>
     </main>
+
+    <div class="brandRow">
+      <span>Startup</span>
+      <span>Agences</span>
+      <span>E-commerce</span>
+      <span>Créateurs</span>
+      <span>SaaS</span>
+    </div>
 
     <!-- CATEGORIES -->
     <section id="categories" class="section">
@@ -713,6 +793,7 @@
         <input id="serviceSearch" type="search" placeholder="Rechercher un service (ex: logo, vidéo)" aria-label="Rechercher un service" />
         <div class="searchMeta" id="serviceCount">5 services</div>
       </div>
+      <div class="emptyState" id="serviceEmpty">Aucun service ne correspond à votre recherche.</div>
 
       <div class="grid5" role="list">
         <button class="cat" type="button" data-cat="Site Web" role="listitem">
@@ -784,6 +865,39 @@
             <a class="btn primary" href="indep-signup.html">Devenir indépendant</a>
             <a class="btn" href="indep-login.html">Connexion pro</a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="sectionTitle">
+        <h2>Pourquoi les équipes choisissent Serviko</h2>
+        <div class="hint">Tout est fait pour accélérer vos projets.</div>
+      </div>
+      <div class="featureGrid">
+        <div class="featureCard">
+          <strong>Brief guidé & cadré</strong>
+          <p>Formulaire intelligent pour éviter les allers-retours inutiles.</p>
+        </div>
+        <div class="featureCard">
+          <strong>Équipe triée sur le volet</strong>
+          <p>Indépendants qualifiés, évalués et disponibles.</p>
+        </div>
+        <div class="featureCard">
+          <strong>Suivi & livrables</strong>
+          <p>Tableau de bord complet pour piloter vos missions.</p>
+        </div>
+        <div class="featureCard">
+          <strong>Validation sécurisée</strong>
+          <p>Vous gardez la main avant le paiement final.</p>
+        </div>
+        <div class="featureCard">
+          <strong>Support humain</strong>
+          <p>Un accompagnement disponible à chaque étape.</p>
+        </div>
+        <div class="featureCard">
+          <strong>Coût transparent</strong>
+          <p>Commission unique de 2% — rien de caché.</p>
         </div>
       </div>
     </section>
@@ -949,6 +1063,7 @@
     const faqButtons = document.querySelectorAll(".faqQuestion");
     const serviceSearch = document.getElementById("serviceSearch");
     const serviceCount = document.getElementById("serviceCount");
+    const serviceEmpty = document.getElementById("serviceEmpty");
     const toTop = document.getElementById("toTop");
 
     if (contactForm){
@@ -978,6 +1093,9 @@
     function updateServiceCount(visibleCount){
       if (serviceCount){
         serviceCount.textContent = `${visibleCount} service${visibleCount > 1 ? "s" : ""}`;
+      }
+      if (serviceEmpty){
+        serviceEmpty.style.display = visibleCount === 0 ? "block" : "none";
       }
     }
 

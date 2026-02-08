@@ -109,6 +109,18 @@
     .inlineActions{display:flex; gap:8px; flex-wrap:wrap}
     .metaRow{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
     .statusNote{color:var(--muted); font-weight:650; font-size:13px}
+    .budgetBox{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(17,24,39,.6);
+      border-radius: 14px;
+      padding:12px;
+      display:grid; gap:6px;
+    }
+    .budgetRow{
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      font-weight:700;
+    }
+    .budgetRow span{color:var(--muted); font-weight:650}
   </style>
 </head>
 <body>
@@ -156,6 +168,10 @@
               <option>1 mois</option>
               <option>Flexible</option>
             </select>
+          </div>
+          <div class="budgetBox" aria-live="polite">
+            <div class="budgetRow"><span>Commission Serviko (2%)</span><strong id="feeAmount">€0</strong></div>
+            <div class="budgetRow"><span>Budget total estimé</span><strong id="totalAmount">€0</strong></div>
           </div>
           <div class="formRow">
             <select name="urgency" required>
@@ -251,6 +267,9 @@
     const addChecklistItem = document.getElementById("addChecklistItem");
     const customItemInput = document.getElementById("customItemInput");
     const categorySelect = document.getElementById("categorySelect");
+    const feeAmount = document.getElementById("feeAmount");
+    const totalAmount = document.getElementById("totalAmount");
+    const budgetField = requestForm?.querySelector("[name='budget']");
     const stepProgressFill = document.getElementById("stepProgressFill");
     const saveDraftButton = document.getElementById("saveDraft");
     const draftStatus = document.getElementById("draftStatus");
@@ -332,6 +351,19 @@
           <li>Format : ${data.get("format") || "—"} • Exigence : ${data.get("quality") || "—"}</li>
         `;
       }
+    }
+
+    function formatCurrency(value){
+      return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+    }
+
+    function updateBudgetSummary(){
+      if (!budgetField || !feeAmount || !totalAmount) return;
+      const budget = Number(budgetField.value || 0);
+      const fee = Math.round(budget * 0.02);
+      const total = budget + fee;
+      feeAmount.textContent = formatCurrency(fee);
+      totalAmount.textContent = formatCurrency(total);
     }
 
     async function hydrateStatus(){
@@ -429,6 +461,11 @@
       categorySelect.addEventListener("change", (event) => {
         renderChecklist(event.target.value || "Autre");
       });
+    }
+
+    if (budgetField){
+      budgetField.addEventListener("input", updateBudgetSummary);
+      updateBudgetSummary();
     }
 
     if (addChecklistItem && customItemInput){

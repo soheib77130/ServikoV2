@@ -67,7 +67,10 @@ const applyPriceInput = document.getElementById("applyPriceInput");
 const applyMessageInput = document.getElementById("applyMessageInput");
 const confirmApplyBtn = document.getElementById("confirmApplyBtn");
 const cancelApplyBtn = document.getElementById("cancelApplyBtn");
+const applyMissionDetails = document.getElementById("applyMissionDetails");
+const applyStatusText = document.getElementById("applyStatusText");
 let pendingApplyRequest = null;
+let availableRequestMap = {};
 
 // ---- INIT ----
 async function init() {
@@ -233,7 +236,7 @@ async function loadAvailableRequests() {
   if (!availableRequests) return;
   try {
     var result = await sb.from("requests")
-      .select("id,title,category,budget,skills,status,deadline,created_at")
+      .select("id,title,category,budget,skills,status,deadline,description,created_at")
       .is("assigned_indep_user_id", null)
       .in("status", ["en_attente", "match_en_cours", "nouveau"])
       .order("created_at", { ascending: false }).limit(15);
@@ -261,6 +264,10 @@ async function loadAvailableRequests() {
 
 function renderAvailableList(items) {
   if (!availableRequests) return;
+  availableRequestMap = {};
+  items.forEach(function(r) {
+    availableRequestMap[String(r.id)] = r;
+  });
   availableRequests.innerHTML = items.map(function(r) {
     var date = new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
     return '<li class="req-item" style="flex-wrap:wrap">' +
@@ -278,14 +285,28 @@ function renderAvailableList(items) {
 }
 
 function openApplyModal(requestId, budget, btn) {
-  pendingApplyRequest = { requestId: requestId, budget: Number(budget || 0), btn: btn };
+  var req = availableRequestMap[String(requestId)] || null;
+  pendingApplyRequest = { requestId: requestId, budget: Number(budget || 0), btn: btn, request: req };
   if (applyPriceInput) applyPriceInput.value = pendingApplyRequest.budget > 0 ? String(pendingApplyRequest.budget) : "";
-  if (applyMessageInput) applyMessageInput.value = "";
+  if (applyMessageInput) applyMessageInput.value = req && req.skills ? ("Bonjour, je suis disponible pour cette mission. Je couvre : " + req.skills + ".") : "";
+  if (applyMissionDetails) {
+    var deadline = req && req.deadline ? req.deadline : "À définir";
+    var budgetText = req && req.budget ? req.budget + " €" : "Budget à définir";
+    applyMissionDetails.innerHTML =
+      '<div class="detail-row"><span class="dl">Titre</span><span class="dd">' + (req && req.title ? req.title : "Mission") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Catégorie</span><span class="dd">' + (req && req.category ? req.category : "—") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Budget client</span><span class="dd">' + budgetText + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Deadline</span><span class="dd">' + deadline + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Compétences</span><span class="dd">' + (req && req.skills ? req.skills : "—") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Description</span><span class="dd">' + (req && req.description ? req.description : "Non renseignée") + '</span></div>';
+  }
+  if (applyStatusText) applyStatusText.textContent = "";
   if (applyModal) applyModal.classList.add("show");
 }
 
 function closeApplyModal() {
   pendingApplyRequest = null;
+  if (applyStatusText) applyStatusText.textContent = "";
   if (applyModal) applyModal.classList.remove("show");
 }
 
@@ -306,7 +327,8 @@ if (confirmApplyBtn) {
 }
 
 async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
-  if (!currentUserId || !currentIndep) return;
+  if (!currentUserId) { alert("Session expirée. Merci de vous reconnecter."); return; }
+  if (!currentIndep) { alert("Profil indépendant introuvable. Vérifiez votre profil Supabase (table independants)."); return; }
   if (!isFinite(proposedPrice) || proposedPrice <= 0) {
     alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
     return;
@@ -319,6 +341,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
   btn.textContent = "En cours...";
   btn.disabled = true;
   if (confirmApplyBtn) confirmApplyBtn.disabled = true;
+  if (applyStatusText) applyStatusText.textContent = "Envoi de votre candidature...";
   try {
     // Assign self to this request
     var result = await sb.from("requests").update({
@@ -331,28 +354,39 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
 
     if (result.error || !result.data) {
       alert("Impossible de postuler. " + (result.error && result.error.message ? result.error.message : "Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise."));
+      if (applyStatusText) applyStatusText.textContent = "Échec : candidature non envoyée.";
       return;
     }
 
-    await sb.from("request_messages").insert({
+    var msgResult = await sb.from("request_messages").insert({
       request_id: requestId,
       sender_user_id: currentUserId,
       sender_role: "independant",
       channel: "instant",
       body: customMessage
-    }).catch(function(){});
+    });
 
-    await sb.from("request_messages").insert({
+    if (msgResult.error) {
+      throw new Error("Message non envoyé: " + msgResult.error.message);
+    }
+
+    var systemMsgResult = await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
       sender_role: "system", channel: "instant",
       body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
-    }).catch(function(){});
+    });
+
+    if (systemMsgResult.error) {
+      throw new Error("Message système non envoyé: " + systemMsgResult.error.message);
+    }
 
     alert("Candidature envoy\u00e9e avec votre prix et votre message.");
+    if (applyStatusText) applyStatusText.textContent = "Candidature envoyée ✅";
     closeApplyModal();
     await refreshAll();
   } catch (err) {
     alert("Erreur lors de la candidature : " + (err && err.message ? err.message : "inconnue"));
+    if (applyStatusText) applyStatusText.textContent = "Erreur: " + (err && err.message ? err.message : "inconnue");
   } finally {
     btn.textContent = "Postuler";
     btn.disabled = false;

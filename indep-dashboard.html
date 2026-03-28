@@ -313,10 +313,12 @@
     <div class="modal">
       <h3>Postuler à la mission</h3>
       <p class="hint">Proposez un prix et un message personnalisé au client.</p>
+      <div id="applyMissionDetails" class="mission-detail" style="margin-top:10px"></div>
       <div style="display:grid;gap:10px;margin-top:12px">
         <input type="number" id="applyPriceInput" placeholder="Votre prix (€)" min="1" />
         <textarea id="applyMessageInput" placeholder="Votre message au client..." rows="4"></textarea>
       </div>
+      <p class="hint" id="applyStatusText" style="margin-top:8px"></p>
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn" id="cancelApplyBtn" style="flex:1">Annuler</button>
         <button class="btn primary" id="confirmApplyBtn" style="flex:1">Envoyer ma candidature</button>

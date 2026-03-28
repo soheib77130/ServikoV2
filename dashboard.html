@@ -4,611 +4,257 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Serviko — Tableau de bord client</title>
-  <meta name="description" content="Tableau de bord client Serviko." />
   <style>
     :root{
-      --bg:#0b0f17;
-      --card:#111827;
-      --muted:#9ca3af;
-      --text:#e5e7eb;
-      --accent:#22c55e;
-      --accent2:#60a5fa;
-      --radius:18px;
-      --shadow: 0 16px 40px rgba(0,0,0,.35);
-      --shadow-soft: 0 12px 28px rgba(0,0,0,.32);
+      --bg:#0b0f17;--card:#111827;--muted:#9ca3af;--text:#e5e7eb;
+      --accent:#22c55e;--accent2:#60a5fa;--accent3:#fbbf24;--danger:#fb7185;
+      --radius:18px;--shadow:0 16px 40px rgba(0,0,0,.35);
+      --shadow-soft:0 12px 28px rgba(0,0,0,.32);
     }
-    *{box-sizing:border-box}
+    *{box-sizing:border-box;margin:0}
     html{scroll-behavior:smooth}
     body{
-      margin:0;
       min-height:100vh;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:
-        radial-gradient(1200px 800px at 20% 10%, rgba(96,165,250,.2), transparent 55%),
-        radial-gradient(900px 700px at 80% 0%, rgba(34,197,94,.18), transparent 55%),
-        linear-gradient(180deg, rgba(7,11,18,.8), rgba(7,11,18,1)),
-        var(--bg);
-      color:var(--text);
-      line-height:1.5;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1200px 800px at 20% 10%,rgba(96,165,250,.18),transparent 55%),
+        radial-gradient(900px 700px at 80% 0%,rgba(34,197,94,.15),transparent 55%),
+        linear-gradient(180deg,rgba(7,11,18,.8),rgba(7,11,18,1)),var(--bg);
+      color:var(--text);line-height:1.5;
     }
-    a{color:inherit; text-decoration:none}
-    ::selection{background:rgba(96,165,250,.35); color:#0b1220}
-    .container{max-width:1100px; margin:0 auto; padding:24px}
-    .nav{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px}
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
-    .logo{
-      width:36px; height:36px; border-radius:12px;
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      display:grid; place-items:center; font-weight:900; color:#071018;
-      box-shadow: 0 12px 26px rgba(96,165,250,.24);
-    }
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:10px 12px; border-radius:14px; font-weight:800; cursor:pointer;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .08s ease;
-    }
-    .btn:hover{border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.1); box-shadow: 0 10px 18px rgba(0,0,0,.2)}
-    .btn:active{transform: translateY(1px)}
-    .btn.primary{
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      border-color: transparent; color:#061019;
-      box-shadow: 0 18px 30px rgba(34,197,94,.25);
-    }
-    .btn:focus-visible{outline:2px solid rgba(96,165,250,.7); outline-offset:2px}
-    .card{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(17,24,39,.6);
-      border-radius: var(--radius);
-      padding:18px;
-      box-shadow: var(--shadow-soft);
-      backdrop-filter: blur(8px);
-    }
-    .cards2{display:grid; grid-template-columns: repeat(2, 1fr); gap:12px}
-    @media (max-width: 900px){ .cards2{grid-template-columns:1fr} }
-    .hint{color:var(--muted); font-weight:650}
-    .list{margin:0; padding:0; list-style:none; display:grid; gap:8px}
-    .pill{padding:6px 10px; border-radius:999px; background: rgba(96,165,250,.15); border:1px solid rgba(96,165,250,.22); font-weight:700; font-size:12px}
-    .panel{display:grid; gap:12px}
-    .summaryGrid{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
-    @media (max-width: 980px){ .summaryGrid{grid-template-columns:1fr} }
-    .summaryCard{
-      border:1px solid rgba(255,255,255,.1);
-      background: rgba(17,24,39,.55);
-      border-radius: 16px;
-      padding:14px;
-      display:grid; gap:6px;
-    }
-    .summaryCard strong{font-size:20px}
-    input{
-      width:100%;
-      padding:10px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(17,24,39,.7);
-      color:var(--text);
-      font-weight:650;
-      font-family: inherit;
-      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-    }
-    input:focus-visible{
-      outline:none;
-      border-color: rgba(96,165,250,.6);
-      box-shadow: 0 0 0 3px rgba(96,165,250,.2);
-      background: rgba(17,24,39,.85);
-    }
+    a{color:inherit;text-decoration:none}
+    ::selection{background:rgba(96,165,250,.35)}
+
+    /* Layout */
+    .container{max-width:1140px;margin:0 auto;padding:20px}
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+    .logo{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent));display:grid;place-items:center;font-weight:900;color:#071018;box-shadow:0 12px 26px rgba(96,165,250,.24)}
+    .nav-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:14px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);color:var(--text);font-size:13px;transition:all .2s ease}
+    .btn:hover{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.1);box-shadow:0 8px 16px rgba(0,0,0,.2);transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));border-color:transparent;color:#061019;box-shadow:0 14px 28px rgba(34,197,94,.22)}
+    .btn.primary:hover{filter:brightness(1.08)}
+    .btn.danger{background:rgba(251,113,133,.15);border-color:rgba(251,113,133,.3);color:#fb7185}
+    .btn.sm{padding:7px 12px;font-size:12px;border-radius:10px}
+    .btn:focus-visible{outline:2px solid rgba(96,165,250,.7);outline-offset:2px}
+
+    /* Cards */
+    .card{border:1px solid rgba(255,255,255,.08);background:rgba(17,24,39,.55);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-soft);backdrop-filter:blur(8px)}
+    .card h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .card-grid{display:grid;gap:14px}
+
+    /* Summary */
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+    @media(max-width:800px){.summary{grid-template-columns:1fr}}
+    .stat{border:1px solid rgba(255,255,255,.08);background:rgba(17,24,39,.5);border-radius:16px;padding:16px;display:grid;gap:4px;transition:border-color .3s}
+    .stat:hover{border-color:rgba(96,165,250,.3)}
+    .stat .label{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+    .stat .value{font-size:24px;font-weight:800}
+    .stat .sub{color:var(--muted);font-size:12px;font-weight:600}
+
+    /* Pills */
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-weight:700;font-size:11px;border:1px solid rgba(96,165,250,.22);background:rgba(96,165,250,.12)}
+    .pill.green{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.12);color:#86efac}
+    .pill.yellow{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.12);color:#fde68a}
+    .pill.red{border-color:rgba(251,113,133,.3);background:rgba(251,113,133,.12);color:#fda4af}
+    .pill.active{animation:pulse-glow 2s ease infinite}
+
+    /* Hint */
+    .hint{color:var(--muted);font-weight:600;font-size:13px}
+
+    /* Two columns */
+    .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media(max-width:900px){.cols{grid-template-columns:1fr}}
+
+    /* Request list */
+    .req-list{list-style:none;padding:0;display:grid;gap:6px}
+    .req-item{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .req-item:hover{border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06)}
+    .req-item.active{border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.1)}
+    .req-item .title{font-weight:700;font-size:14px}
+    .req-item .meta{font-size:11px;color:var(--muted)}
+
+    /* Chat */
+    .chat-container{display:grid;grid-template-columns:280px 1fr;gap:14px;min-height:500px}
+    @media(max-width:900px){.chat-container{grid-template-columns:1fr;min-height:auto}}
+    .chat-sidebar{display:grid;gap:8px;align-content:start}
+    .chat-main{border:1px solid rgba(255,255,255,.08);background:rgba(17,24,39,.6);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+    .chat-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+    .chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;max-height:340px;padding:8px 0}
+    .msg{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;font-weight:600;animation:msgIn .3s ease}
+    .msg.client{align-self:flex-end;background:linear-gradient(135deg,rgba(96,165,250,.25),rgba(96,165,250,.15));border:1px solid rgba(96,165,250,.2)}
+    .msg.independant{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .msg.system{align-self:center;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);color:#fde68a;font-size:12px;text-align:center}
+    .msg .time{font-size:10px;color:var(--muted);margin-top:4px}
+    .chat-input{display:flex;gap:8px}
+    .chat-input input{flex:1;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(17,24,39,.7);color:var(--text);font-weight:600;font-family:inherit;transition:border-color .2s}
+    .chat-input input:focus{outline:none;border-color:rgba(96,165,250,.5);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+
+    /* Payment modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;place-items:center;z-index:100}
+    .modal-overlay.show{display:grid}
+    .modal{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;max-width:440px;width:90%;animation:modalIn .3s ease}
+    .modal h3{margin-bottom:16px}
+    .modal .price-display{font-size:36px;font-weight:900;text-align:center;margin:16px 0;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .modal .actions{display:flex;gap:10px;margin-top:20px}
+
+    /* Rating */
+    .rating-stars{display:flex;gap:6px;margin:12px 0}
+    .rating-stars .star{width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);display:grid;place-items:center;cursor:pointer;font-size:14px;font-weight:800;transition:all .2s}
+    .rating-stars .star:hover,.rating-stars .star.active{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.15);color:#fbbf24}
+
+    /* Animations */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    @keyframes pulse-glow{0%,100%{opacity:1}50%{opacity:.6}}
+    .fade-in{animation:fadeUp .5s ease both}
+    .fade-in.d1{animation-delay:.1s}.fade-in.d2{animation-delay:.2s}.fade-in.d3{animation-delay:.3s}
+
+    /* Notification badge */
+    .notif-badge{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(34,197,94,.4);animation:pulse-glow 1.5s ease infinite}
+
+    /* Status dot */
+    .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+    .status-dot.online{background:var(--accent);box-shadow:0 0 6px rgba(34,197,94,.4)}
+    .status-dot.offline{background:var(--muted)}
+
+    /* Input general */
+    input[type="number"]{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(17,24,39,.7);color:var(--text);font-weight:600;font-family:inherit;width:100%}
+    input[type="number"]:focus{outline:none;border-color:rgba(96,165,250,.5);box-shadow:0 0 0 3px rgba(96,165,250,.15)}
+    textarea{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(17,24,39,.7);color:var(--text);font-weight:600;font-family:inherit;width:100%;resize:vertical}
   </style>
 </head>
 <body>
   <div class="container">
-    <header class="nav">
+    <!-- Nav -->
+    <header class="nav fade-in">
       <a class="brand" href="index.html">
         <div class="logo">S</div>
         <div>Serviko</div>
       </a>
-      <div style="display:flex; gap:8px; flex-wrap:wrap">
-        <a class="btn" href="index.html#client">Retour à l'espace client</a>
-        <button class="btn" type="button" data-logout>Se déconnecter</button>
+      <div class="nav-actions">
+        <a class="btn" href="request.html">Nouvelle demande</a>
+        <button class="btn danger" type="button" data-logout>Se déconnecter</button>
       </div>
     </header>
 
-    <section class="panel">
-      <div class="card">
-        <h1>Tableau de bord client</h1>
-        <p class="hint">Résumé rapide de vos missions en cours et des prochaines actions.</p>
-      </div>
+    <!-- Welcome -->
+    <div class="card fade-in" style="margin-bottom:14px">
+      <h1 id="welcomeTitle" style="font-size:22px;margin-bottom:4px">Tableau de bord client</h1>
+      <p class="hint">Gérez vos demandes, négociez et suivez vos missions en temps réel.</p>
+    </div>
 
-      <div class="summaryGrid">
-        <div class="summaryCard">
-          <span class="hint">Demandes en cours</span>
-          <strong id="summaryRequests">—</strong>
-          <span class="hint">Suivi en temps réel</span>
-        </div>
-        <div class="summaryCard">
-          <span class="hint">Budget engagé</span>
-          <strong>€—</strong>
-          <span class="hint">Paiement sécurisé</span>
-        </div>
-        <div class="summaryCard">
-          <span class="hint">Support</span>
-          <strong>Disponible</strong>
-          <span class="hint">Réponse &lt; 24h</span>
-        </div>
+    <!-- Summary KPIs -->
+    <div class="summary fade-in d1">
+      <div class="stat">
+        <span class="label">Demandes actives</span>
+        <span class="value" id="kpiRequests">0</span>
+        <span class="sub">En cours de traitement</span>
       </div>
+      <div class="stat">
+        <span class="label">Budget engagé</span>
+        <span class="value" id="kpiBudget">0 €</span>
+        <span class="sub">Total des missions</span>
+      </div>
+      <div class="stat">
+        <span class="label">Note moyenne reçue</span>
+        <span class="value" id="kpiRating">—</span>
+        <span class="sub">Sur 10</span>
+      </div>
+    </div>
 
+    <!-- Quick actions + Request list -->
+    <div class="cols fade-in d2" style="margin-bottom:14px">
       <div class="card">
-        <h3>Prochaines étapes</h3>
-        <ul class="list">
-          <li>✅ Vérifiez votre brief pour accélérer le matching.</li>
-          <li>✅ Confirmez le budget avant lancement.</li>
-          <li>✅ Centralisez vos échanges dans la messagerie.</li>
+        <h3>Mes demandes</h3>
+        <ul class="req-list" id="requestList">
+          <li class="hint">Chargement...</li>
         </ul>
-      </div>
-
-      <div class="summaryGrid">
-        <div class="summaryCard">
-          <span class="hint">Demandes en cours</span>
-          <strong id="summaryRequests">—</strong>
-          <span class="hint">Suivi en temps réel</span>
-        </div>
-        <div class="summaryCard">
-          <span class="hint">Budget engagé</span>
-          <strong>€—</strong>
-          <span class="hint">Paiement sécurisé</span>
-        </div>
-        <div class="summaryCard">
-          <span class="hint">Support</span>
-          <strong>Disponible</strong>
-          <span class="hint">Réponse &lt; 24h</span>
+        <div style="margin-top:12px">
+          <a class="btn primary" href="request.html">Déposer une demande</a>
         </div>
       </div>
-
       <div class="card">
-        <h3>Prochaines étapes</h3>
-        <ul class="list">
-          <li>✅ Vérifiez vos briefs pour accélérer le matching.</li>
-          <li>✅ Validez les budgets avant lancement.</li>
-          <li>✅ Centralisez vos échanges dans la messagerie.</li>
-        </ul>
-      </div>
-
-      <div class="cards2">
-        <div class="card">
-          <h3>Demandes actives</h3>
-          <ul class="list" id="clientRequests">
-            <li>Chargement des demandes...</li>
+        <h3>Actions rapides</h3>
+        <div style="display:grid;gap:8px">
+          <button class="btn" id="relaunchBtn" type="button">Relancer le matching</button>
+          <button class="btn" id="supportBtn" type="button">Contacter le support</button>
+        </div>
+        <div style="margin-top:16px">
+          <h3>Missions terminées</h3>
+          <ul class="req-list" id="completedList">
+            <li class="hint">Aucune mission terminée.</li>
           </ul>
         </div>
-        <div class="card">
-          <h3>Actions rapides</h3>
-          <div style="display:flex; gap:8px; flex-wrap:wrap">
-            <span class="pill">Simulation de paiement</span>
-            <button class="btn" type="button" id="relaunchMatchBtn">Relancer un indépendant</button>
-            <span class="pill">Télécharger une facture</span>
-          </div>
-          <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
-            <a class="btn" href="request.html">Déposer une demande</a>
-            <button class="btn" type="button" id="supportBtn">Contacter le support</button>
-            <button class="btn" type="button" data-logout>Se déconnecter</button>
-          </div>
-        </div>
       </div>
+    </div>
 
-      <div class="card">
-        <h3>Messagerie & cahier des charges</h3>
-        <p class="hint" id="conversationHint">Sélectionnez une demande pour discuter avec l'indépendant.</p>
-        <div class="panel" style="grid-template-columns: 1.2fr 2fr; gap:16px">
-          <div>
-            <h4>Vos demandes</h4>
-            <ul class="list" id="conversationList">
-              <li>Chargement des demandes...</li>
-            </ul>
+    <!-- Chat Section -->
+    <div class="card fade-in d3" style="margin-bottom:14px">
+      <h3>Messagerie</h3>
+      <p class="hint" id="chatHint">Sélectionnez une demande pour discuter avec l'indépendant assigné.</p>
+      <div class="chat-container">
+        <div class="chat-sidebar">
+          <div style="font-weight:700;font-size:13px;margin-bottom:4px">Conversations</div>
+          <ul class="req-list" id="chatList">
+            <li class="hint">Chargement...</li>
+          </ul>
+        </div>
+        <div class="chat-main" id="chatMain">
+          <div class="chat-header">
+            <div>
+              <div style="font-weight:800;font-size:15px" id="chatTitle">Sélectionnez une conversation</div>
+              <div class="hint" id="chatStatus"></div>
+            </div>
+            <div style="display:flex;gap:6px" id="chatActions"></div>
           </div>
-          <div class="card" style="background:rgba(17,24,39,.7)">
-            <h4 id="conversationTitle">Discussion</h4>
-            <div class="pill" id="conversationStatus">—</div>
-            <div style="margin-top:12px">
-              <h5>Cahier des charges</h5>
-              <div class="list" id="specChecklist">Sélectionnez une demande.</div>
-              <p class="hint">Paiement simulé : le prix est finalisé ici avant mise en production.</p>
-              <div class="panel" style="margin-top:12px">
-                <input type="number" id="negotiatedPrice" placeholder="Prix convenu (€)" min="0" />
-                <button class="btn" type="button" id="saveSpecBtn">Mettre à jour</button>
-                <button class="btn primary" type="button" id="confirmSpecBtn">Confirmer et passer au fil principal</button>
-              </div>
-            </div>
-            <div style="margin-top:16px">
-              <h5>Messages</h5>
-              <div class="list" id="messageList">Aucun message.</div>
-              <div style="margin-top:12px; display:flex; gap:8px">
-                <input type="text" id="messageInput" placeholder="Écrire un message..." />
-                <button class="btn primary" type="button" id="sendMessage">Envoyer</button>
-              </div>
-            </div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="hint" style="text-align:center;margin:auto">Aucune conversation sélectionnée</div>
+          </div>
+          <div class="chat-input" id="chatInputArea" style="display:none">
+            <input type="text" id="msgInput" placeholder="Écrire un message..." />
+            <button class="btn primary" id="sendBtn">Envoyer</button>
           </div>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal">
+      <h3>Confirmer le paiement</h3>
+      <p class="hint">Vous confirmez le montant négocié pour cette mission.</p>
+      <div class="price-display" id="paymentPrice">0 €</div>
+      <div style="text-align:center">
+        <div class="pill green">Paiement simulé — Mode démo</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="cancelPayment" style="flex:1">Annuler</button>
+        <button class="btn primary" id="confirmPayment" style="flex:1">Payer maintenant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating Modal -->
+  <div class="modal-overlay" id="ratingModal">
+    <div class="modal">
+      <h3>Notez l'indépendant</h3>
+      <p class="hint">Comment s'est passée la collaboration ?</p>
+      <div class="rating-stars" id="ratingStars"></div>
+      <textarea id="ratingComment" placeholder="Commentaire (optionnel)..." rows="3"></textarea>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn" id="skipRating" style="flex:1">Plus tard</button>
+        <button class="btn primary" id="submitRating" style="flex:1">Envoyer la note</button>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://skfqoyyoahuaffshimnc.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_yxLCOU94zhGck9yvGYch5Q_ePCPd9Yq";
-    const supportBtn = document.getElementById("supportBtn");
-    const relaunchMatchBtn = document.getElementById("relaunchMatchBtn");
-    const logoutButtons = Array.from(document.querySelectorAll("[data-logout]"));
-    const header = document.querySelector("h1");
-    const clientRequests = document.getElementById("clientRequests");
-    const summaryRequests = document.getElementById("summaryRequests");
-    const conversationList = document.getElementById("conversationList");
-    const conversationTitle = document.getElementById("conversationTitle");
-    const conversationStatus = document.getElementById("conversationStatus");
-    const conversationHint = document.getElementById("conversationHint");
-    const specChecklist = document.getElementById("specChecklist");
-    const negotiatedPrice = document.getElementById("negotiatedPrice");
-    const saveSpecBtn = document.getElementById("saveSpecBtn");
-    const confirmSpecBtn = document.getElementById("confirmSpecBtn");
-    const messageList = document.getElementById("messageList");
-    const messageInput = document.getElementById("messageInput");
-    const sendMessage = document.getElementById("sendMessage");
-    let currentRequest = null;
-    let currentUserId = null;
-    const supabaseClient = window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        storage: window.localStorage
-      }
-    });
-
-    async function hydrateProfile(){
-      if (!supabaseClient) return;
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const user = session?.user;
-      if (!user){
-        window.location.href = "login.html";
-        return;
-      }
-      currentUserId = user.id;
-      if (user.user_metadata?.role && user.user_metadata.role !== "client"){
-        await supabaseClient.auth.signOut();
-        window.location.href = "login.html";
-        return;
-      }
-      const { data } = await supabaseClient
-        .from("clients")
-        .select("firstname, lastname")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      const name = [data?.firstname, data?.lastname].filter(Boolean).join(" ");
-      if (header){
-        header.textContent = name ? `Tableau de bord de ${name}` : "Tableau de bord client";
-      }
-      await refreshRequests(user.id);
-      await attemptAutoMatch(user.id);
-    }
-
-    hydrateProfile();
-
-    if (supportBtn){
-      supportBtn.addEventListener("click", () => {
-        alert("Support contacté (démo). Nous revenons vers vous rapidement.");
-      });
-    }
-
-    if (relaunchMatchBtn){
-      relaunchMatchBtn.addEventListener("click", async () => {
-        if (!currentUserId) return;
-        const target = currentRequest?.status === "en_attente"
-          ? currentRequest
-          : await fetchLatestPending(currentUserId);
-        if (!target){
-          alert("Aucune demande en attente à relancer.");
-          return;
-        }
-        const result = await runMatching(target, currentUserId);
-        alert(result?.message || "Matching relancé.");
-        await refreshRequests(currentUserId);
-      });
-    }
-
-    async function handleLogout(){
-      try {
-        if (supabaseClient){
-          await supabaseClient.auth.signOut();
-        }
-      } catch (error){
-        console.warn("Erreur de déconnexion", error);
-      } finally {
-        Object.keys(window.localStorage || {}).forEach((key) => {
-          if (key.includes("sb-") && key.includes("-auth-token")){
-            window.localStorage.removeItem(key);
-          }
-        });
-        alert("Vous êtes déconnecté.");
-        window.location.href = "index.html";
-      }
-    }
-
-    if (logoutButtons.length){
-      logoutButtons.forEach((button) => {
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          handleLogout();
-        });
-      });
-    }
-
-    async function loadConversation(requestId, userId){
-      if (!supabaseClient) return;
-      const { data: request } = await supabaseClient
-        .from("requests")
-        .select("id, title, status, spec_checklist, negotiated_price, match_summary")
-        .eq("id", requestId)
-        .eq("client_user_id", userId)
-        .maybeSingle();
-      if (!request) return;
-      currentRequest = request;
-      if (conversationTitle) conversationTitle.textContent = request.title || "Discussion";
-      if (conversationStatus) conversationStatus.textContent = request.status || "nouveau";
-      if (conversationHint){
-        if (request.status === "en_attente"){
-          conversationHint.textContent = "Votre demande est en attente d'un indépendant disponible. Nous relançons automatiquement le matching.";
-        } else if (request.status === "negociation"){
-          conversationHint.textContent = request.match_summary || "Messagerie instantanée pour cadrer le prix et le cahier des charges.";
-        } else {
-          conversationHint.textContent = "Fil principal après validation du cahier des charges.";
-        }
-      }
-      renderChecklist(request.spec_checklist || []);
-      if (negotiatedPrice) negotiatedPrice.value = request.negotiated_price || "";
-      await loadMessages(request.id, request.status);
-    }
-
-    function renderChecklist(items){
-      if (!specChecklist) return;
-      if (!items || items.length === 0){
-        specChecklist.textContent = "Aucun cahier des charges enregistré.";
-        return;
-      }
-      specChecklist.innerHTML = items.map((item, index) => (
-        `<label style="display:flex; gap:8px; align-items:center;">
-          <input type="checkbox" data-index="${index}" ${item.checked ? "checked" : ""}/>
-          ${item.label}
-        </label>`
-      )).join("");
-    }
-
-    async function loadMessages(requestId, status){
-      if (!messageList) return;
-      const channel = status === "confirme" ? "fil" : "instant";
-      const { data: messages, error } = await supabaseClient
-        .from("request_messages")
-        .select("sender_role, body, created_at")
-        .eq("request_id", requestId)
-        .eq("channel", channel)
-        .order("created_at", { ascending: true });
-      if (error){
-        messageList.innerHTML = "<div class='hint'>Impossible de charger les messages.</div>";
-        return;
-      }
-      if (!messages || messages.length === 0){
-        messageList.innerHTML = "<div class='hint'>Aucun message pour le moment.</div>";
-        return;
-      }
-      messageList.innerHTML = messages.map((msg) => (
-        `<div><strong>${msg.sender_role}</strong> — ${msg.body}</div>`
-      )).join("");
-    }
-
-    if (saveSpecBtn){
-      saveSpecBtn.addEventListener("click", async () => {
-        if (!currentRequest || !supabaseClient) return;
-        const checklist = Array.from(specChecklist?.querySelectorAll("input[type='checkbox']") || [])
-          .map((checkbox) => ({
-            label: checkbox.parentElement?.textContent?.trim() || "",
-            checked: checkbox.checked
-          }));
-        const price = negotiatedPrice?.value ? Number(negotiatedPrice.value) : null;
-        await supabaseClient
-          .from("requests")
-          .update({ spec_checklist: checklist, negotiated_price: price })
-          .eq("id", currentRequest.id);
-        alert("Cahier des charges mis à jour.");
-      });
-    }
-
-    if (confirmSpecBtn){
-      confirmSpecBtn.addEventListener("click", async () => {
-        if (!currentRequest || !supabaseClient) return;
-        const agreedPrice = negotiatedPrice?.value ? Number(negotiatedPrice.value) : null;
-        if (!agreedPrice){
-          alert("Merci d'indiquer un prix convenu avant de confirmer.");
-          return;
-        }
-        await supabaseClient
-          .from("requests")
-          .update({ status: "confirme", negotiated_price: agreedPrice })
-          .eq("id", currentRequest.id);
-        currentRequest.status = "confirme";
-        if (conversationStatus) conversationStatus.textContent = "confirme";
-        await loadMessages(currentRequest.id, currentRequest.status);
-        alert("Cahier des charges confirmé. La conversation passe au fil principal.");
-      });
-    }
-
-    if (sendMessage){
-      sendMessage.addEventListener("click", async () => {
-        if (!currentRequest || !supabaseClient || !messageInput?.value) return;
-        const channel = currentRequest.status === "confirme" ? "fil" : "instant";
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        const user = session?.user;
-        if (!user) return;
-        const { error } = await supabaseClient
-          .from("request_messages")
-          .insert({
-            request_id: currentRequest.id,
-            sender_user_id: user.id,
-            sender_role: "client",
-            channel,
-            body: messageInput.value.trim()
-          });
-        if (!error){
-          messageInput.value = "";
-          await loadMessages(currentRequest.id, currentRequest.status);
-        }
-      });
-    }
-
-    function formatStatus(status){
-      const map = {
-        match_en_cours: "Match en cours",
-        en_attente: "En attente",
-        negociation: "Négociation",
-        confirme: "Confirmé"
-      };
-      return map[status] || status || "nouveau";
-    }
-
-    async function refreshRequests(userId){
-      if (!clientRequests) return;
-      const { data: requests, error } = await supabaseClient
-        .from("requests")
-        .select("id, title, status, created_at, match_summary, negotiated_price, assigned_indep_user_id, budget, skills, category")
-        .eq("client_user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(6);
-      if (error){
-        clientRequests.innerHTML = "<li>Impossible de charger les demandes.</li>";
-        return;
-      }
-      if (!requests || requests.length === 0){
-        clientRequests.innerHTML = "<li>Aucune demande en cours.</li>";
-        if (summaryRequests) summaryRequests.textContent = "0";
-        return;
-      }
-      if (summaryRequests) summaryRequests.textContent = requests.length.toString();
-      clientRequests.innerHTML = requests.map((item) => (
-        `<li><strong>${item.title}</strong> — ${formatStatus(item.status)}</li>`
-      )).join("\\n");
-      if (conversationList){
-        conversationList.innerHTML = requests.map((item) => (
-          `<li><button class="btn" data-request="${item.id}">${item.title}</button><div class="hint">${item.match_summary || formatStatus(item.status)}</div></li>`
-        )).join("\\n");
-        conversationList.querySelectorAll("button[data-request]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const requestId = Number(btn.dataset.request);
-            loadConversation(requestId, userId);
-          });
-        });
-      }
-      return requests;
-    }
-
-    async function fetchLatestPending(userId){
-      const { data } = await supabaseClient
-        .from("requests")
-        .select("id, title, status, budget, skills, category")
-        .eq("client_user_id", userId)
-        .eq("status", "en_attente")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    }
-
-    function normalizeSkills(skills){
-      if (!skills) return [];
-      return skills.toLowerCase().split(",").map((skill) => skill.trim()).filter(Boolean);
-    }
-
-    function computeScore(request, indep){
-      const requestSkills = normalizeSkills(request.skills).concat(normalizeSkills(request.category));
-      const indepSkills = normalizeSkills(indep.skills);
-      const shared = requestSkills.filter((skill) => indepSkills.includes(skill));
-      const skillScore = shared.length * 15;
-      const experienceScore = indep.experience?.toLowerCase().includes("senior") ? 12 : 6;
-      const budget = Number(request.budget || 0);
-      const rate = Number(indep.daily_rate || 0);
-      const budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
-      return Math.round(skillScore + experienceScore + budgetFit);
-    }
-
-    async function runMatching(request, userId){
-      const { data: indeps } = await supabaseClient
-        .from("independants")
-        .select("user_id, firstname, lastname, skills, daily_rate, status, experience")
-        .in("status", ["en_ligne", "disponible", "online"]);
-      if (!indeps || indeps.length === 0){
-        await supabaseClient
-          .from("requests")
-          .update({ status: "en_attente", match_summary: "Aucun indépendant disponible pour le moment. Votre demande reste en attente." })
-          .eq("id", request.id)
-          .eq("client_user_id", userId);
-        return {
-          statusLabel: "En attente",
-          message: "Aucun indépendant disponible pour le moment. La demande reste en attente."
-        };
-      }
-      const ranked = indeps.map((indep) => ({
-        indep,
-        score: computeScore(request, indep)
-      })).sort((a, b) => b.score - a.score);
-      const top = ranked[0];
-      const matchSummary = `Match basé sur ${top.score} points (compétences et budget).`;
-      const initialPrice = Number(request.budget || 0) || null;
-      await supabaseClient
-        .from("requests")
-        .update({
-          assigned_indep_user_id: top.indep.user_id,
-          status: "negociation",
-          match_score: top.score,
-          match_summary: matchSummary,
-          negotiated_price: initialPrice
-        })
-        .eq("id", request.id)
-        .eq("client_user_id", userId);
-      const matchesPayload = ranked.slice(0, 3).map((entry, index) => ({
-        request_id: request.id,
-        indep_user_id: entry.indep.user_id,
-        score: entry.score,
-        rank: index + 1
-      }));
-      if (matchesPayload.length > 0){
-        await supabaseClient.from("request_matches").insert(matchesPayload);
-      }
-      if (initialPrice){
-        await supabaseClient.from("request_messages").insert({
-          request_id: request.id,
-          sender_user_id: userId,
-          sender_role: "system",
-          channel: "instant",
-          body: `Proposition initiale : ${initialPrice} € (ajustable avant validation).`
-        });
-      }
-      return {
-        statusLabel: "Match trouvé",
-        message: `Un indépendant est en ligne. Proposition initiale : ${initialPrice || "à définir"} €.`
-      };
-    }
-
-    async function attemptAutoMatch(userId){
-      const { data: pending } = await supabaseClient
-        .from("requests")
-        .select("id, title, status, budget, skills, category, assigned_indep_user_id")
-        .eq("client_user_id", userId)
-        .in("status", ["en_attente", "match_en_cours"]);
-      if (!pending || pending.length === 0) return;
-      const pendingWithoutMatch = pending.filter((item) => !item.assigned_indep_user_id);
-      if (pendingWithoutMatch.length === 0) return;
-      for (const request of pendingWithoutMatch){
-        await runMatching(request, userId);
-      }
-      await refreshRequests(userId);
-    }
-  </script>
+  <script src="dashboard.js"></script>
 </body>
 </html>

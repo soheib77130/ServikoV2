@@ -73,39 +73,58 @@ let pendingApplyRequest = null;
 let availableRequestMap = {};
 
 async function ensureIndepProfile(user, forceRefresh) {
-  if (!sb || !user?.id) return null;
+  if (!sb) return null;
+
+  var resolvedUser = user || null;
+  if (!resolvedUser) {
+    var authUserResult = await sb.auth.getUser();
+    resolvedUser = authUserResult && authUserResult.data ? authUserResult.data.user : null;
+  }
+  if (!resolvedUser?.id) return null;
   if (currentIndep && !forceRefresh) return currentIndep;
 
   var profileResult = await sb.from("independants")
     .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
-    .eq("user_id", user.id).maybeSingle();
+    .eq("user_id", resolvedUser.id).maybeSingle();
 
   if (!profileResult.error && profileResult.data) {
     currentIndep = profileResult.data;
     return currentIndep;
   }
 
-  var meta = user.user_metadata || {};
-  var seedProfile = {
-    user_id: user.id,
+  var meta = resolvedUser.user_metadata || {};
+  var fallbackProfile = {
     firstname: meta.firstname || "",
     lastname: meta.lastname || "",
-    email: user.email || "",
-    status: "hors_ligne"
+    city: "",
+    experience: "",
+    skills: "",
+    daily_rate: null,
+    status: "hors_ligne",
+    siret: "",
+    phone: ""
   };
 
-  var createResult = await sb.from("independants").upsert(seedProfile, { onConflict: "user_id" }).select("user_id").maybeSingle();
+  // Tentative de création non bloquante : on continue même si RLS la refuse.
+  var createResult = await sb.from("independants").upsert({
+    user_id: resolvedUser.id,
+    firstname: fallbackProfile.firstname,
+    lastname: fallbackProfile.lastname,
+    email: resolvedUser.email || "",
+    status: "hors_ligne"
+  }, { onConflict: "user_id" });
+
   if (createResult.error) {
-    console.error("Impossible de créer le profil indépendant:", createResult.error);
-    currentIndep = null;
-    return null;
+    console.warn("Profil indépendant absent (création automatique refusée):", createResult.error.message);
+    currentIndep = fallbackProfile;
+    return currentIndep;
   }
 
   var refetch = await sb.from("independants")
     .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
-    .eq("user_id", user.id).maybeSingle();
+    .eq("user_id", resolvedUser.id).maybeSingle();
 
-  currentIndep = refetch.data || null;
+  currentIndep = refetch.data || fallbackProfile;
   return currentIndep;
 }
 
@@ -365,11 +384,11 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
 
   var sessionResult = await sb.auth.getSession();
   var user = sessionResult && sessionResult.data && sessionResult.data.session ? sessionResult.data.session.user : null;
-  var profile = await ensureIndepProfile(user, true);
-  if (!profile) {
-    alert("Profil indépendant introuvable. Impossible de postuler pour le moment. Complétez votre profil puis rechargez la page.");
-    return;
-  }
+  var profile = await ensureIndepProfile(user, true) || {
+    firstname: user?.user_metadata?.firstname || "",
+    lastname: user?.user_metadata?.lastname || "",
+    skills: ""
+  };
   if (!isFinite(proposedPrice) || proposedPrice <= 0) {
     alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
     return;

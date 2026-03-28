@@ -61,6 +61,7 @@ const ratingStarsEl = document.getElementById("ratingStars");
 const ratingComment = document.getElementById("ratingComment");
 const submitRatingBtn = document.getElementById("submitRating");
 const skipRatingBtn = document.getElementById("skipRating");
+const availableRequests = document.getElementById("availableRequests");
 
 // ---- INIT ----
 async function init() {
@@ -158,7 +159,10 @@ if (searchBtn) {
 
 // ---- DATA ----
 async function refreshAll() {
-  await Promise.all([loadMissions(), loadKPIs(), loadUserRating()]);
+  await loadMissions().catch(function(){});
+  await loadKPIs().catch(function(){});
+  await loadUserRating().catch(function(){});
+  await loadAvailableRequests().catch(function(){});
 }
 
 async function loadKPIs() {
@@ -216,6 +220,92 @@ async function loadMissions() {
   document.querySelectorAll("[data-chat]").forEach(function(el) {
     el.addEventListener("click", function() { openConversation(Number(el.dataset.chat)); });
   });
+}
+
+// ---- AVAILABLE REQUESTS ----
+async function loadAvailableRequests() {
+  if (!availableRequests) return;
+  try {
+    var result = await sb.from("requests")
+      .select("id,title,category,budget,skills,status,deadline,created_at")
+      .is("assigned_indep_user_id", null)
+      .in("status", ["en_attente", "match_en_cours", "nouveau"])
+      .order("created_at", { ascending: false }).limit(15);
+    var data = result.data;
+    if (result.error || !data || data.length === 0) {
+      availableRequests.innerHTML = '<li class="hint">Aucune demande disponible pour le moment.</li>';
+      return;
+    }
+    // Filter by category if selected
+    var cat = categorySelect ? categorySelect.value : "";
+    var filtered = cat ? data.filter(function(r) { return r.category && r.category.trim() === cat; }) : data;
+    if (filtered.length === 0) {
+      availableRequests.innerHTML = '<li class="hint">Aucune demande pour la cat\u00e9gorie "' + cat + '". <span style="color:var(--accent2);cursor:pointer" id="showAllBtn">Voir toutes</span></li>';
+      var showAll = document.getElementById("showAllBtn");
+      if (showAll) showAll.addEventListener("click", function() {
+        renderAvailableList(data);
+      });
+      return;
+    }
+    renderAvailableList(filtered);
+  } catch (err) {
+    availableRequests.innerHTML = '<li class="hint">Erreur de chargement.</li>';
+  }
+}
+
+function renderAvailableList(items) {
+  if (!availableRequests) return;
+  availableRequests.innerHTML = items.map(function(r) {
+    var date = new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    return '<li class="req-item" style="flex-wrap:wrap">' +
+      '<div style="flex:1"><div class="title">' + r.title + '</div>' +
+      '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget ? r.budget + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
+      '<div class="meta">' + (r.skills || '') + '</div></div>' +
+      '<button class="btn sm primary" data-apply="' + r.id + '">Postuler</button></li>';
+  }).join("");
+  // Bind apply buttons
+  document.querySelectorAll("[data-apply]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      applyForRequest(btn.dataset.apply, btn);
+    });
+  });
+}
+
+async function applyForRequest(requestId, btn) {
+  if (!currentUserId || !currentIndep) return;
+  btn.textContent = "En cours...";
+  btn.disabled = true;
+  try {
+    // Assign self to this request
+    var result = await sb.from("requests").update({
+      assigned_indep_user_id: currentUserId,
+      status: "negociation",
+      match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
+      match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
+      negotiated_price: null
+    }).eq("id", requestId).is("assigned_indep_user_id", null);
+
+    if (result.error) {
+      alert("Impossible de postuler. Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise.");
+      btn.textContent = "Postuler";
+      btn.disabled = false;
+      return;
+    }
+
+    // Send system message
+    await sb.from("request_messages").insert({
+      request_id: requestId, sender_user_id: currentUserId,
+      sender_role: "system", channel: "instant",
+      body: (currentIndep.firstname || "Ind\u00e9pendant") + " a accept\u00e9 de travailler sur cette mission. Vous pouvez maintenant n\u00e9gocier le prix."
+    }).catch(function(){});
+
+    alert("Candidature envoy\u00e9e ! Vous pouvez maintenant discuter avec le client.");
+    await refreshAll();
+  } catch (err) {
+    alert("Erreur lors de la candidature.");
+    btn.textContent = "Postuler";
+    btn.disabled = false;
+  }
 }
 
 // ---- MISSION DETAIL ----

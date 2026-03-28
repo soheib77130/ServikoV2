@@ -62,6 +62,12 @@ const ratingComment = document.getElementById("ratingComment");
 const submitRatingBtn = document.getElementById("submitRating");
 const skipRatingBtn = document.getElementById("skipRating");
 const availableRequests = document.getElementById("availableRequests");
+const applyModal = document.getElementById("applyModal");
+const applyPriceInput = document.getElementById("applyPriceInput");
+const applyMessageInput = document.getElementById("applyMessageInput");
+const confirmApplyBtn = document.getElementById("confirmApplyBtn");
+const cancelApplyBtn = document.getElementById("cancelApplyBtn");
+let pendingApplyRequest = null;
 
 // ---- INIT ----
 async function init() {
@@ -266,33 +272,53 @@ function renderAvailableList(items) {
   // Bind apply buttons
   document.querySelectorAll("[data-apply]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      applyForRequest(btn.dataset.apply, btn);
+      openApplyModal(btn.dataset.apply, btn.dataset.budget, btn);
     });
   });
 }
 
-async function applyForRequest(requestId, btn) {
+function openApplyModal(requestId, budget, btn) {
+  pendingApplyRequest = { requestId: requestId, budget: Number(budget || 0), btn: btn };
+  if (applyPriceInput) applyPriceInput.value = pendingApplyRequest.budget > 0 ? String(pendingApplyRequest.budget) : "";
+  if (applyMessageInput) applyMessageInput.value = "";
+  if (applyModal) applyModal.classList.add("show");
+}
+
+function closeApplyModal() {
+  pendingApplyRequest = null;
+  if (applyModal) applyModal.classList.remove("show");
+}
+
+if (cancelApplyBtn) cancelApplyBtn.addEventListener("click", closeApplyModal);
+if (applyModal) {
+  applyModal.addEventListener("click", function(e) {
+    if (e.target === applyModal) closeApplyModal();
+  });
+}
+
+if (confirmApplyBtn) {
+  confirmApplyBtn.addEventListener("click", async function() {
+    if (!pendingApplyRequest) return;
+    var price = Number(applyPriceInput ? applyPriceInput.value : 0);
+    var message = applyMessageInput ? applyMessageInput.value.trim() : "";
+    await applyForRequest(pendingApplyRequest.requestId, pendingApplyRequest.btn, price, message);
+  });
+}
+
+async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
   if (!currentUserId || !currentIndep) return;
-  var defaultPrice = Number((btn && btn.dataset && btn.dataset.budget) || 0);
-  var rawPrice = window.prompt("Votre prix proposé (€) pour cette mission :", defaultPrice > 0 ? String(defaultPrice) : "");
-  if (rawPrice === null) return;
-  var proposedPrice = Number(rawPrice);
   if (!isFinite(proposedPrice) || proposedPrice <= 0) {
     alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
     return;
   }
-  var customMessage = window.prompt(
-    "Ajoutez un court message personnalisé au client :",
-    "Bonjour, je peux démarrer rapidement et vous proposer un rendu soigné."
-  );
-  if (customMessage === null) return;
-  customMessage = customMessage.trim();
   if (!customMessage) {
     alert("Le message personnalisé est obligatoire.");
     return;
   }
+  if (!btn) return;
   btn.textContent = "En cours...";
   btn.disabled = true;
+  if (confirmApplyBtn) confirmApplyBtn.disabled = true;
   try {
     // Assign self to this request
     var result = await sb.from("requests").update({
@@ -304,9 +330,7 @@ async function applyForRequest(requestId, btn) {
     }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
     if (result.error || !result.data) {
-      alert("Impossible de postuler. Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise.");
-      btn.textContent = "Postuler";
-      btn.disabled = false;
+      alert("Impossible de postuler. " + (result.error && result.error.message ? result.error.message : "Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise."));
       return;
     }
 
@@ -325,11 +349,14 @@ async function applyForRequest(requestId, btn) {
     }).catch(function(){});
 
     alert("Candidature envoy\u00e9e avec votre prix et votre message.");
+    closeApplyModal();
     await refreshAll();
   } catch (err) {
-    alert("Erreur lors de la candidature.");
+    alert("Erreur lors de la candidature : " + (err && err.message ? err.message : "inconnue"));
+  } finally {
     btn.textContent = "Postuler";
     btn.disabled = false;
+    if (confirmApplyBtn) confirmApplyBtn.disabled = false;
   }
 }
 

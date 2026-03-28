@@ -62,6 +62,15 @@ const ratingComment = document.getElementById("ratingComment");
 const submitRatingBtn = document.getElementById("submitRating");
 const skipRatingBtn = document.getElementById("skipRating");
 const availableRequests = document.getElementById("availableRequests");
+const applyModal = document.getElementById("applyModal");
+const applyPriceInput = document.getElementById("applyPriceInput");
+const applyMessageInput = document.getElementById("applyMessageInput");
+const confirmApplyBtn = document.getElementById("confirmApplyBtn");
+const cancelApplyBtn = document.getElementById("cancelApplyBtn");
+const applyMissionDetails = document.getElementById("applyMissionDetails");
+const applyStatusText = document.getElementById("applyStatusText");
+let pendingApplyRequest = null;
+let availableRequestMap = {};
 
 // ---- INIT ----
 async function init() {
@@ -227,7 +236,7 @@ async function loadAvailableRequests() {
   if (!availableRequests) return;
   try {
     var result = await sb.from("requests")
-      .select("id,title,category,budget,skills,status,deadline,created_at")
+      .select("id,title,category,budget,skills,status,deadline,description,created_at")
       .is("assigned_indep_user_id", null)
       .in("status", ["en_attente", "match_en_cours", "nouveau"])
       .order("created_at", { ascending: false }).limit(15);
@@ -255,26 +264,84 @@ async function loadAvailableRequests() {
 
 function renderAvailableList(items) {
   if (!availableRequests) return;
+  availableRequestMap = {};
+  items.forEach(function(r) {
+    availableRequestMap[String(r.id)] = r;
+  });
   availableRequests.innerHTML = items.map(function(r) {
     var date = new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
     return '<li class="req-item" style="flex-wrap:wrap">' +
       '<div style="flex:1"><div class="title">' + r.title + '</div>' +
       '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget ? r.budget + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
       '<div class="meta">' + (r.skills || '') + '</div></div>' +
-      '<button class="btn sm primary" data-apply="' + r.id + '">Postuler</button></li>';
+      '<button class="btn sm primary" data-apply="' + r.id + '" data-budget="' + (r.budget || "") + '">Postuler</button></li>';
   }).join("");
   // Bind apply buttons
   document.querySelectorAll("[data-apply]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      applyForRequest(btn.dataset.apply, btn);
+      openApplyModal(btn.dataset.apply, btn.dataset.budget, btn);
     });
   });
 }
 
-async function applyForRequest(requestId, btn) {
-  if (!currentUserId || !currentIndep) return;
+function openApplyModal(requestId, budget, btn) {
+  var req = availableRequestMap[String(requestId)] || null;
+  pendingApplyRequest = { requestId: requestId, budget: Number(budget || 0), btn: btn, request: req };
+  if (applyPriceInput) applyPriceInput.value = pendingApplyRequest.budget > 0 ? String(pendingApplyRequest.budget) : "";
+  if (applyMessageInput) applyMessageInput.value = req && req.skills ? ("Bonjour, je suis disponible pour cette mission. Je couvre : " + req.skills + ".") : "";
+  if (applyMissionDetails) {
+    var deadline = req && req.deadline ? req.deadline : "À définir";
+    var budgetText = req && req.budget ? req.budget + " €" : "Budget à définir";
+    applyMissionDetails.innerHTML =
+      '<div class="detail-row"><span class="dl">Titre</span><span class="dd">' + (req && req.title ? req.title : "Mission") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Catégorie</span><span class="dd">' + (req && req.category ? req.category : "—") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Budget client</span><span class="dd">' + budgetText + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Deadline</span><span class="dd">' + deadline + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Compétences</span><span class="dd">' + (req && req.skills ? req.skills : "—") + '</span></div>' +
+      '<div class="detail-row"><span class="dl">Description</span><span class="dd">' + (req && req.description ? req.description : "Non renseignée") + '</span></div>';
+  }
+  if (applyStatusText) applyStatusText.textContent = "";
+  if (applyModal) applyModal.classList.add("show");
+}
+
+function closeApplyModal() {
+  pendingApplyRequest = null;
+  if (applyStatusText) applyStatusText.textContent = "";
+  if (applyModal) applyModal.classList.remove("show");
+}
+
+if (cancelApplyBtn) cancelApplyBtn.addEventListener("click", closeApplyModal);
+if (applyModal) {
+  applyModal.addEventListener("click", function(e) {
+    if (e.target === applyModal) closeApplyModal();
+  });
+}
+
+if (confirmApplyBtn) {
+  confirmApplyBtn.addEventListener("click", async function() {
+    if (!pendingApplyRequest) return;
+    var price = Number(applyPriceInput ? applyPriceInput.value : 0);
+    var message = applyMessageInput ? applyMessageInput.value.trim() : "";
+    await applyForRequest(pendingApplyRequest.requestId, pendingApplyRequest.btn, price, message);
+  });
+}
+
+async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
+  if (!currentUserId) { alert("Session expirée. Merci de vous reconnecter."); return; }
+  if (!currentIndep) { alert("Profil indépendant introuvable. Vérifiez votre profil Supabase (table independants)."); return; }
+  if (!isFinite(proposedPrice) || proposedPrice <= 0) {
+    alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
+    return;
+  }
+  if (!customMessage) {
+    alert("Le message personnalisé est obligatoire.");
+    return;
+  }
+  if (!btn) return;
   btn.textContent = "En cours...";
   btn.disabled = true;
+  if (confirmApplyBtn) confirmApplyBtn.disabled = true;
+  if (applyStatusText) applyStatusText.textContent = "Envoi de votre candidature...";
   try {
     // Assign self to this request
     var result = await sb.from("requests").update({
@@ -282,29 +349,48 @@ async function applyForRequest(requestId, btn) {
       status: "negociation",
       match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
       match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
-      negotiated_price: null
-    }).eq("id", requestId).is("assigned_indep_user_id", null);
+      negotiated_price: proposedPrice
+    }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
-    if (result.error) {
-      alert("Impossible de postuler. Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise.");
-      btn.textContent = "Postuler";
-      btn.disabled = false;
+    if (result.error || !result.data) {
+      alert("Impossible de postuler. " + (result.error && result.error.message ? result.error.message : "Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise."));
+      if (applyStatusText) applyStatusText.textContent = "Échec : candidature non envoyée.";
       return;
     }
 
-    // Send system message
-    await sb.from("request_messages").insert({
+    var msgResult = await sb.from("request_messages").insert({
+      request_id: requestId,
+      sender_user_id: currentUserId,
+      sender_role: "independant",
+      channel: "instant",
+      body: customMessage
+    });
+
+    if (msgResult.error) {
+      throw new Error("Message non envoyé: " + msgResult.error.message);
+    }
+
+    var systemMsgResult = await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
       sender_role: "system", channel: "instant",
-      body: (currentIndep.firstname || "Ind\u00e9pendant") + " a accept\u00e9 de travailler sur cette mission. Vous pouvez maintenant n\u00e9gocier le prix."
-    }).catch(function(){});
+      body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
+    });
 
-    alert("Candidature envoy\u00e9e ! Vous pouvez maintenant discuter avec le client.");
+    if (systemMsgResult.error) {
+      throw new Error("Message système non envoyé: " + systemMsgResult.error.message);
+    }
+
+    alert("Candidature envoy\u00e9e avec votre prix et votre message.");
+    if (applyStatusText) applyStatusText.textContent = "Candidature envoyée ✅";
+    closeApplyModal();
     await refreshAll();
   } catch (err) {
-    alert("Erreur lors de la candidature.");
+    alert("Erreur lors de la candidature : " + (err && err.message ? err.message : "inconnue"));
+    if (applyStatusText) applyStatusText.textContent = "Erreur: " + (err && err.message ? err.message : "inconnue");
+  } finally {
     btn.textContent = "Postuler";
     btn.disabled = false;
+    if (confirmApplyBtn) confirmApplyBtn.disabled = false;
   }
 }
 

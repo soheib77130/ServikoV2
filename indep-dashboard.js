@@ -72,6 +72,43 @@ const applyStatusText = document.getElementById("applyStatusText");
 let pendingApplyRequest = null;
 let availableRequestMap = {};
 
+async function ensureIndepProfile(user, forceRefresh) {
+  if (!sb || !user?.id) return null;
+  if (currentIndep && !forceRefresh) return currentIndep;
+
+  var profileResult = await sb.from("independants")
+    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
+    .eq("user_id", user.id).maybeSingle();
+
+  if (!profileResult.error && profileResult.data) {
+    currentIndep = profileResult.data;
+    return currentIndep;
+  }
+
+  var meta = user.user_metadata || {};
+  var seedProfile = {
+    user_id: user.id,
+    firstname: meta.firstname || "",
+    lastname: meta.lastname || "",
+    email: user.email || "",
+    status: "hors_ligne"
+  };
+
+  var createResult = await sb.from("independants").upsert(seedProfile, { onConflict: "user_id" }).select("user_id").maybeSingle();
+  if (createResult.error) {
+    console.error("Impossible de créer le profil indépendant:", createResult.error);
+    currentIndep = null;
+    return null;
+  }
+
+  var refetch = await sb.from("independants")
+    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
+    .eq("user_id", user.id).maybeSingle();
+
+  currentIndep = refetch.data || null;
+  return currentIndep;
+}
+
 // ---- INIT ----
 async function init() {
   if (!sb) return;
@@ -82,10 +119,7 @@ async function init() {
     await sb.auth.signOut(); window.location.href = "indep-login.html"; return;
   }
   currentUserId = user.id;
-  const { data } = await sb.from("independants")
-    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
-    .eq("user_id", user.id).maybeSingle();
-  currentIndep = data;
+  const data = await ensureIndepProfile(user);
   const name = [data?.firstname, data?.lastname].filter(Boolean).join(" ");
   if (welcomeTitle) welcomeTitle.textContent = name ? "Bonjour " + name : "Tableau de bord";
 
@@ -328,7 +362,14 @@ if (confirmApplyBtn) {
 
 async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
   if (!currentUserId) { alert("Session expirée. Merci de vous reconnecter."); return; }
-  if (!currentIndep) { alert("Profil indépendant introuvable. Vérifiez votre profil Supabase (table independants)."); return; }
+
+  var sessionResult = await sb.auth.getSession();
+  var user = sessionResult && sessionResult.data && sessionResult.data.session ? sessionResult.data.session.user : null;
+  var profile = await ensureIndepProfile(user, true);
+  if (!profile) {
+    alert("Profil indépendant introuvable. Impossible de postuler pour le moment. Complétez votre profil puis rechargez la page.");
+    return;
+  }
   if (!isFinite(proposedPrice) || proposedPrice <= 0) {
     alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
     return;
@@ -347,8 +388,8 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
     var result = await sb.from("requests").update({
       assigned_indep_user_id: currentUserId,
       status: "negociation",
-      match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
-      match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
+      match_score: computeScore({ skills: "", category: "", budget: 0 }, profile),
+      match_summary: "Candidature de " + (profile.firstname || "") + " " + (profile.lastname || ""),
       negotiated_price: proposedPrice
     }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
@@ -373,7 +414,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
     var systemMsgResult = await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
       sender_role: "system", channel: "instant",
-      body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
+      body: (profile.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
     });
 
     if (systemMsgResult.error) {

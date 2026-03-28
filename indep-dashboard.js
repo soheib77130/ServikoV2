@@ -261,7 +261,7 @@ function renderAvailableList(items) {
       '<div style="flex:1"><div class="title">' + r.title + '</div>' +
       '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget ? r.budget + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
       '<div class="meta">' + (r.skills || '') + '</div></div>' +
-      '<button class="btn sm primary" data-apply="' + r.id + '">Postuler</button></li>';
+      '<button class="btn sm primary" data-apply="' + r.id + '" data-budget="' + (r.budget || "") + '">Postuler</button></li>';
   }).join("");
   // Bind apply buttons
   document.querySelectorAll("[data-apply]").forEach(function(btn) {
@@ -273,6 +273,24 @@ function renderAvailableList(items) {
 
 async function applyForRequest(requestId, btn) {
   if (!currentUserId || !currentIndep) return;
+  var defaultPrice = Number((btn && btn.dataset && btn.dataset.budget) || 0);
+  var rawPrice = window.prompt("Votre prix proposé (€) pour cette mission :", defaultPrice > 0 ? String(defaultPrice) : "");
+  if (rawPrice === null) return;
+  var proposedPrice = Number(rawPrice);
+  if (!isFinite(proposedPrice) || proposedPrice <= 0) {
+    alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
+    return;
+  }
+  var customMessage = window.prompt(
+    "Ajoutez un court message personnalisé au client :",
+    "Bonjour, je peux démarrer rapidement et vous proposer un rendu soigné."
+  );
+  if (customMessage === null) return;
+  customMessage = customMessage.trim();
+  if (!customMessage) {
+    alert("Le message personnalisé est obligatoire.");
+    return;
+  }
   btn.textContent = "En cours...";
   btn.disabled = true;
   try {
@@ -282,24 +300,31 @@ async function applyForRequest(requestId, btn) {
       status: "negociation",
       match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
       match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
-      negotiated_price: null
-    }).eq("id", requestId).is("assigned_indep_user_id", null);
+      negotiated_price: proposedPrice
+    }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
-    if (result.error) {
+    if (result.error || !result.data) {
       alert("Impossible de postuler. Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise.");
       btn.textContent = "Postuler";
       btn.disabled = false;
       return;
     }
 
-    // Send system message
+    await sb.from("request_messages").insert({
+      request_id: requestId,
+      sender_user_id: currentUserId,
+      sender_role: "independant",
+      channel: "instant",
+      body: customMessage
+    }).catch(function(){});
+
     await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
       sender_role: "system", channel: "instant",
-      body: (currentIndep.firstname || "Ind\u00e9pendant") + " a accept\u00e9 de travailler sur cette mission. Vous pouvez maintenant n\u00e9gocier le prix."
+      body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
     }).catch(function(){});
 
-    alert("Candidature envoy\u00e9e ! Vous pouvez maintenant discuter avec le client.");
+    alert("Candidature envoy\u00e9e avec votre prix et votre message.");
     await refreshAll();
   } catch (err) {
     alert("Erreur lors de la candidature.");

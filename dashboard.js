@@ -74,11 +74,11 @@ async function refreshAll() {
 
 async function loadKPIs() {
   try {
-    const { data, error } = await sb.from("requests").select("id,status,negotiated_price,budget").eq("client_user_id", currentUserId);
+    const { data, error } = await sb.from("requests").select("id,status,negotiated_price,budget_min").eq("client_profile_id", currentUserId);
     if (error || !data) return;
     const active = data.filter(r => !["confirme", "termine", "annule", "livre"].includes(r.status));
     if (kpiRequests) kpiRequests.textContent = active.length;
-    const totalBudget = data.reduce((s, r) => s + Number(r.negotiated_price || r.budget || 0), 0);
+    const totalBudget = data.reduce((s, r) => s + Number(r.negotiated_price || r.budget_min || 0), 0);
     if (kpiBudget) kpiBudget.textContent = totalBudget + " €";
   } catch (_) {}
 }
@@ -107,8 +107,8 @@ function statusPillClass(s) {
 async function loadRequests() {
   try {
   const { data, error } = await sb.from("requests")
-    .select("id,title,status,created_at,negotiated_price,budget,assigned_indep_user_id,category,skills,match_summary,deadline")
-    .eq("client_user_id", currentUserId).order("created_at", { ascending: false }).limit(20);
+    .select("id,title,status,created_at,negotiated_price,budget_min,assigned_indep_user_id,category,skills,match_summary,deadline")
+    .eq("client_profile_id", currentUserId).order("created_at", { ascending: false }).limit(20);
   if (error || !data) {
     if (requestList) requestList.innerHTML = '<li class="hint">Aucune demande trouvée.</li>';
     if (chatList) chatList.innerHTML = '<li class="hint">Aucune conversation.</li>';
@@ -122,7 +122,7 @@ async function loadRequests() {
   if (active.length === 0) {
     requestList.innerHTML = '<li class="hint">Aucune demande en cours.</li>';
   } else {
-    requestList.innerHTML = active.map(r => `<li class="req-item" data-id="${r.id}"><div><div class="title">${r.title}</div><div class="meta">${r.category || ""} · ${r.budget ? r.budget + " €" : ""}</div></div><span class="pill ${statusPillClass(r.status)}">${formatStatus(r.status)}</span></li>`).join("");
+    requestList.innerHTML = active.map(r => `<li class="req-item" data-id="${r.id}"><div><div class="title">${r.title}</div><div class="meta">${r.category || ""} · ${r.budget_min ? r.budget_min + " €" : ""}</div></div><span class="pill ${statusPillClass(r.status)}">${formatStatus(r.status)}</span></li>`).join("");
   }
 
   if (done.length === 0) {
@@ -152,8 +152,8 @@ async function loadRequests() {
 // ---- CONVERSATION ----
 async function openConversation(requestId) {
   const { data: req } = await sb.from("requests")
-    .select("id,title,status,spec_checklist,negotiated_price,match_summary,assigned_indep_user_id,budget,deadline")
-    .eq("id", requestId).eq("client_user_id", currentUserId).maybeSingle();
+    .select("id,title,status,spec_checklist,negotiated_price,match_summary,assigned_indep_user_id,budget_min,deadline")
+    .eq("id", requestId).eq("client_profile_id", currentUserId).maybeSingle();
   if (!req) return;
   currentRequest = req;
 
@@ -228,7 +228,7 @@ async function sendMessage() {
 // ---- REALTIME ----
 function setupRealtime() {
   sb.channel("client-requests-" + currentUserId)
-    .on("postgres_changes", { event: "*", schema: "public", table: "requests", filter: `client_user_id=eq.${currentUserId}` },
+    .on("postgres_changes", { event: "*", schema: "public", table: "requests", filter: `client_profile_id=eq.${currentUserId}` },
       () => { refreshAll(); if (currentRequest) openConversation(currentRequest.id); })
     .subscribe();
 }
@@ -244,7 +244,7 @@ function subscribeMessages(requestId) {
 // ---- PAYMENT ----
 function openPaymentModal() {
   if (!currentRequest) return;
-  const price = currentRequest.negotiated_price || currentRequest.budget || 0;
+  const price = currentRequest.negotiated_price || currentRequest.budget_min || 0;
   paymentPrice.textContent = price + " €";
   paymentModal.classList.add("show");
 }
@@ -253,11 +253,11 @@ cancelPayment?.addEventListener("click", () => paymentModal.classList.remove("sh
 
 confirmPayment?.addEventListener("click", async () => {
   if (!currentRequest) return;
-  const price = currentRequest.negotiated_price || currentRequest.budget || 0;
+  const price = currentRequest.negotiated_price || currentRequest.budget_min || 0;
   // Create payment (silently fails if payments table not yet created)
   await sb.from("payments").insert({
     request_id: currentRequest.id,
-    client_user_id: currentUserId,
+    client_profile_id: currentUserId,
     indep_user_id: currentRequest.assigned_indep_user_id,
     amount: price,
     status: "paid",
@@ -331,7 +331,7 @@ function computeScore(request, indep) {
   const shared = rSkills.filter(s => iSkills.includes(s));
   const skillScore = shared.length * 15;
   const expScore = indep.experience?.toLowerCase().includes("senior") ? 12 : 6;
-  const budget = Number(request.budget || 0);
+  const budget = Number(request.budget_min || 0);
   const rate = Number(indep.daily_rate || 0);
   const budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
   return Math.round(skillScore + expScore + budgetFit);
@@ -340,8 +340,8 @@ function computeScore(request, indep) {
 async function attemptAutoMatch() {
   try {
     const { data: pending } = await sb.from("requests")
-      .select("id,title,status,budget,skills,category,assigned_indep_user_id")
-      .eq("client_user_id", currentUserId).in("status", ["en_attente", "match_en_cours"]);
+      .select("id,title,status,budget_min,skills,category,assigned_indep_user_id")
+      .eq("client_profile_id", currentUserId).in("status", ["en_attente", "match_en_cours"]);
     if (!pending) return;
     const unmatched = pending.filter(r => !r.assigned_indep_user_id);
     for (const req of unmatched) await runMatching(req).catch(() => {});
@@ -359,7 +359,7 @@ async function runMatching(request) {
   }
   const ranked = indeps.map(i => ({ indep: i, score: computeScore(request, i) })).sort((a, b) => b.score - a.score);
   const top = ranked[0];
-  const price = Number(request.budget || 0) || null;
+  const price = Number(request.budget_min || 0) || null;
   await sb.from("requests").update({
     assigned_indep_user_id: top.indep.user_id,
     status: "negociation",
@@ -373,7 +373,7 @@ async function runMatching(request) {
     request_id: request.id,
     type: "new_request",
     title: "Nouvelle mission",
-    body: `${request.title} — ${request.budget ? request.budget + " €" : "Budget à définir"}`,
+    body: `${request.title} — ${request.budget_min ? request.budget_min + " €" : "Budget à définir"}`,
     expires_at: new Date(Date.now() + 60000).toISOString()
   }).catch(() => {});
   if (price) {
@@ -395,7 +395,7 @@ relaunchBtn?.addEventListener("click", async () => {
   relaunchBtn.disabled = true;
   try {
     const { data } = await sb.from("requests")
-      .select("id,title,status,budget,skills,category").eq("client_user_id", currentUserId)
+      .select("id,title,status,budget_min,skills,category").eq("client_profile_id", currentUserId)
       .in("status", ["nouveau", "en_attente", "match_en_cours"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (!data) { alert("Aucune demande en attente à relancer."); return; }
     await runMatching(data);

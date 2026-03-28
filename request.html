@@ -553,10 +553,10 @@
           quality: formData.get("quality")
         };
         const payload = {
-          client_user_id: user.id,
+          client_profile_id: user.id,
           title: formData.get("title").toString().trim(),
           category: formData.get("category").toString().trim(),
-          budget: Number(formData.get("budget")),
+          budget_min: Number(formData.get("budget")),
           deadline: formData.get("deadline").toString().trim(),
           style: formData.get("style").toString().trim(),
           skills: formData.get("skills").toString().trim(),
@@ -603,7 +603,7 @@
       const shared = requestSkills.filter((skill) => indepSkills.includes(skill));
       const skillScore = shared.length * 15;
       const experienceScore = indep.experience?.toLowerCase().includes("senior") ? 12 : 6;
-      const budget = Number(request.budget || 0);
+      const budget = Number(request.budget_min || 0);
       const rate = Number(indep.daily_rate || 0);
       const budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
       return Math.round(skillScore + experienceScore + budgetFit);
@@ -645,7 +645,7 @@
       })).sort((a, b) => b.score - a.score);
       const top = ranked[0];
       const matchSummary = "Match: " + (top.indep.firstname || "") + " " + (top.indep.lastname || "") + " (" + top.score + " pts)";
-      const initialPrice = Number(request.budget || 0) || null;
+      const initialPrice = Number(request.budget_min || 0) || null;
 
       await supabaseClient
         .from("requests")
@@ -664,7 +664,7 @@
         request_id: request.id,
         type: "new_request",
         title: "Nouvelle mission",
-        body: (request.title || "Mission") + " — " + (request.budget ? request.budget + " €" : "Budget à définir"),
+        body: (request.title || "Mission") + " — " + (request.budget_min ? request.budget_min + " €" : "Budget à définir"),
         expires_at: new Date(Date.now() + 60000).toISOString()
       }).catch(function(){});
 

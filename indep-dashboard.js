@@ -198,7 +198,7 @@ function statusPillClass(s) {
 
 async function loadMissions() {
   var result = await sb.from("requests")
-    .select("id,title,status,created_at,negotiated_price,budget,category,skills,match_summary,deadline,deadline_at,delivered,client_user_id")
+    .select("id,title,status,created_at,negotiated_price,budget_min,category,skills,match_summary,deadline,deadline_at,delivered,client_profile_id")
     .eq("assigned_indep_user_id", currentUserId).order("created_at", { ascending: false }).limit(20);
   var data = result.data;
   if (result.error || !data) { if (missionList) missionList.innerHTML = '<li class="hint">Erreur.</li>'; return; }
@@ -208,7 +208,7 @@ async function loadMissions() {
     return;
   }
   if (missionList) missionList.innerHTML = data.map(function(r) {
-    return '<li class="req-item" data-mission="' + r.id + '"><div><div class="title">' + r.title + '</div><div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.negotiated_price || r.budget || "?") + ' \u20ac</div></div><span class="pill ' + statusPillClass(r.status) + '">' + formatStatus(r.status) + '</span></li>';
+    return '<li class="req-item" data-mission="' + r.id + '"><div><div class="title">' + r.title + '</div><div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.negotiated_price || r.budget_min || "?") + ' \u20ac</div></div><span class="pill ' + statusPillClass(r.status) + '">' + formatStatus(r.status) + '</span></li>';
   }).join("");
   if (chatList) chatList.innerHTML = data.map(function(r) {
     return '<li class="req-item" data-chat="' + r.id + '"><div class="title">' + r.title + '</div><span class="pill ' + statusPillClass(r.status) + '" style="font-size:10px">' + formatStatus(r.status) + '</span></li>';
@@ -227,7 +227,7 @@ async function loadAvailableRequests() {
   if (!availableRequests) return;
   try {
     var result = await sb.from("requests")
-      .select("id,title,category,budget,skills,status,deadline,created_at")
+      .select("id,title,category,budget_min,skills,status,deadline,created_at")
       .is("assigned_indep_user_id", null)
       .in("status", ["en_attente", "match_en_cours", "nouveau"])
       .order("created_at", { ascending: false }).limit(15);
@@ -259,7 +259,7 @@ function renderAvailableList(items) {
     var date = new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
     return '<li class="req-item" style="flex-wrap:wrap">' +
       '<div style="flex:1"><div class="title">' + r.title + '</div>' +
-      '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget ? r.budget + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
+      '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget_min ? r.budget_min + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
       '<div class="meta">' + (r.skills || '') + '</div></div>' +
       '<button class="btn sm primary" data-apply="' + r.id + '">Postuler</button></li>';
   }).join("");
@@ -280,7 +280,7 @@ async function applyForRequest(requestId, btn) {
     var result = await sb.from("requests").update({
       assigned_indep_user_id: currentUserId,
       status: "negociation",
-      match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
+      match_score: computeScore({ skills: "", category: "", budget_min: 0 }, currentIndep),
       match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
       negotiated_price: null
     }).eq("id", requestId).is("assigned_indep_user_id", null);
@@ -311,7 +311,7 @@ async function applyForRequest(requestId, btn) {
 // ---- MISSION DETAIL ----
 async function openMissionDetail(requestId) {
   var result = await sb.from("requests")
-    .select("id,title,status,negotiated_price,budget,category,skills,deadline,deadline_at,delivered,description,client_user_id")
+    .select("id,title,status,negotiated_price,budget_min,category,skills,deadline,deadline_at,delivered,description,client_profile_id")
     .eq("id", requestId).eq("assigned_indep_user_id", currentUserId).maybeSingle();
   var req = result.data;
   if (!req) return;
@@ -323,7 +323,7 @@ async function openMissionDetail(requestId) {
   if (missionDetail) missionDetail.innerHTML =
     '<div class="detail-row"><span class="dl">Titre</span><span class="dd">' + req.title + '</span></div>' +
     '<div class="detail-row"><span class="dl">Cat\u00e9gorie</span><span class="dd">' + (req.category || "—") + '</span></div>' +
-    '<div class="detail-row"><span class="dl">Budget initial</span><span class="dd">' + (req.budget || "—") + ' \u20ac</span></div>' +
+    '<div class="detail-row"><span class="dl">Budget initial</span><span class="dd">' + (req.budget_min || "—") + ' \u20ac</span></div>' +
     '<div class="detail-row"><span class="dl">Prix n\u00e9goci\u00e9</span><span class="dd">' + (req.negotiated_price || "—") + ' \u20ac</span></div>' +
     '<div class="detail-row"><span class="dl">Comp\u00e9tences</span><span class="dd">' + (req.skills || "—") + '</span></div>' +
     '<div class="detail-row"><span class="dl">Statut</span><span class="dd"><span class="pill ' + statusPillClass(req.status) + '">' + formatStatus(req.status) + '</span></span></div>' +
@@ -399,7 +399,7 @@ if (deliverBtn) {
 // ---- CONVERSATION ----
 async function openConversation(requestId) {
   var result = await sb.from("requests")
-    .select("id,title,status,negotiated_price,budget,match_summary,assigned_indep_user_id,client_user_id,deadline")
+    .select("id,title,status,negotiated_price,budget_min,match_summary,assigned_indep_user_id,client_profile_id,deadline")
     .eq("id", requestId).eq("assigned_indep_user_id", currentUserId).maybeSingle();
   var req = result.data;
   if (!req) return;
@@ -577,7 +577,7 @@ function computeScore(request, indep) {
   var iSkills = normalizeSkills(indep.skills);
   var shared = rSkills.filter(function(s) { return iSkills.indexOf(s) !== -1; });
   var skillScore = shared.length * 15;
-  var budget = Number(request.budget || 0);
+  var budget = Number(request.budget_min || 0);
   var rate = Number(indep.daily_rate || 0);
   var budgetFit = rate ? Math.max(0, 20 - Math.abs(budget - rate * 5) / 50) : 5;
   return Math.round(skillScore + budgetFit);
@@ -587,7 +587,7 @@ async function runMatching() {
   if (!currentIndep) return;
   var cat = categorySelect ? categorySelect.value : "";
   var result = await sb.from("requests")
-    .select("id,title,category,skills,budget,status")
+    .select("id,title,category,skills,budget_min,status")
     .is("assigned_indep_user_id", null).in("status", ["en_attente", "match_en_cours"]);
   var requests = result.data;
   if (!requests || requests.length === 0) { alert("Aucune demande disponible."); return; }
@@ -595,7 +595,7 @@ async function runMatching() {
   if (filtered.length === 0) { alert("Aucune demande pour cette cat\u00e9gorie."); return; }
   var ranked = filtered.map(function(r) { return { request: r, score: computeScore(r, currentIndep) }; }).sort(function(a, b) { return b.score - a.score; });
   var best = ranked[0];
-  var price = Number(best.request.budget || 0) || null;
+  var price = Number(best.request.budget_min || 0) || null;
   await sb.from("requests").update({
     assigned_indep_user_id: currentUserId, status: "negociation",
     match_score: best.score, match_summary: "Match: " + best.score + " pts", negotiated_price: price
@@ -641,7 +641,7 @@ if (submitRatingBtn) {
     if (!currentRequest || selectedRating === 0) { alert("Choisissez une note."); return; }
     await sb.from("ratings").insert({
       request_id: currentRequest.id, rater_user_id: currentUserId,
-      rated_user_id: currentRequest.client_user_id, rater_role: "independant",
+      rated_user_id: currentRequest.client_profile_id, rater_role: "independant",
       score: selectedRating, comment: (ratingComment ? ratingComment.value.trim() : null) || null
     });
     if (ratingModal) ratingModal.classList.remove("show");

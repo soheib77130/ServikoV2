@@ -502,7 +502,10 @@
     if (requestForm){
       requestForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-        if (!requestForm.checkValidity()){
+        // Show all steps temporarily to validate hidden fields
+        steps.forEach(s => s.style.display = "grid");
+        const isValid = requestForm.checkValidity();
+        if (!isValid){
           const invalidField = requestForm.querySelector(":invalid");
           if (invalidField){
             const invalidStep = invalidField.closest(".step");
@@ -511,9 +514,13 @@
               updateStepper();
             }
           }
+          // Restore display
+          steps.forEach((s, i) => s.style.display = i === currentStep ? "grid" : "none");
           requestForm.reportValidity();
           return;
         }
+        // Restore display
+        steps.forEach((s, i) => s.style.display = i === currentStep ? "grid" : "none");
         if (!supabaseClient){
           alert("Configurez Supabase pour activer l'envoi.");
           return;
@@ -603,28 +610,43 @@
     }
 
     async function runMatching(request, userId){
-      const { data: indeps } = await supabaseClient
+      setStatus("Recherche d'un indépendant...");
+      // Simulate a short search delay for UX
+      await new Promise(r => setTimeout(r, 1500));
+
+      const { data: indeps, error: indepErr } = await supabaseClient
         .from("independants")
         .select("user_id, firstname, lastname, skills, daily_rate, status, experience")
         .in("status", ["en_ligne", "disponible", "online"]);
+
+      if (indepErr) {
+        console.error("Matching error:", indepErr);
+      }
+
       if (!indeps || indeps.length === 0){
+        // No indep online → leave request in en_attente for indeps to browse
         await supabaseClient
           .from("requests")
-          .update({ status: "en_attente", match_summary: "Aucun indépendant disponible pour le moment. Votre demande reste en attente." })
-          .eq("id", request.id)
-          .eq("client_user_id", userId);
+          .update({ status: "en_attente", match_summary: "En attente d'un indépendant. Votre demande est visible par les indépendants." })
+          .eq("id", request.id);
+        setStatus("En attente");
         return {
           statusLabel: "En attente",
-          message: "Demande envoyée. Aucun indépendant en ligne pour le moment, nous vous avertirons dès qu'il y en a un."
+          message: "Demande envoyée ! Aucun indépendant en ligne pour le moment. Votre demande est visible dans la liste des missions disponibles — un indépendant pourra postuler dès qu'il se connecte."
         };
       }
+
+      setStatus("Indépendant trouvé, attribution...");
+      await new Promise(r => setTimeout(r, 800));
+
       const ranked = indeps.map((indep) => ({
         indep,
         score: computeScore(request, indep)
       })).sort((a, b) => b.score - a.score);
       const top = ranked[0];
-      const matchSummary = `Match basé sur ${top.score} points (compétences et budget).`;
+      const matchSummary = "Match: " + (top.indep.firstname || "") + " " + (top.indep.lastname || "") + " (" + top.score + " pts)";
       const initialPrice = Number(request.budget || 0) || null;
+
       await supabaseClient
         .from("requests")
         .update({
@@ -634,29 +656,39 @@
           match_summary: matchSummary,
           negotiated_price: initialPrice
         })
-        .eq("id", request.id)
-        .eq("client_user_id", userId);
-      const matchesPayload = ranked.slice(0, 3).map((entry, index) => ({
+        .eq("id", request.id);
+
+      // Notify the indep (silently fails if table doesn't exist)
+      await supabaseClient.from("notifications").insert({
+        recipient_user_id: top.indep.user_id,
         request_id: request.id,
-        indep_user_id: entry.indep.user_id,
-        score: entry.score,
-        rank: index + 1
-      }));
+        type: "new_request",
+        title: "Nouvelle mission",
+        body: (request.title || "Mission") + " — " + (request.budget ? request.budget + " €" : "Budget à définir"),
+        expires_at: new Date(Date.now() + 60000).toISOString()
+      }).catch(function(){});
+
+      // Save top matches
+      var matchesPayload = ranked.slice(0, 3).map(function(entry, index) {
+        return { request_id: request.id, indep_user_id: entry.indep.user_id, score: entry.score, rank: index + 1 };
+      });
       if (matchesPayload.length > 0){
-        await supabaseClient.from("request_matches").insert(matchesPayload);
+        await supabaseClient.from("request_matches").insert(matchesPayload).catch(function(){});
       }
+
       if (initialPrice){
         await supabaseClient.from("request_messages").insert({
           request_id: request.id,
           sender_user_id: userId,
           sender_role: "system",
           channel: "instant",
-          body: `Proposition initiale : ${initialPrice} € (ajustable avant validation).`
-        });
+          body: "Proposition initiale : " + initialPrice + " € (ajustable avant validation)."
+        }).catch(function(){});
       }
+
       return {
         statusLabel: "Match trouvé",
-        message: `Nous avons trouvé un indépendant en ligne. Proposition initiale : ${initialPrice || "à définir"} €.`
+        message: "Un indépendant a été trouvé : " + (top.indep.firstname || "") + ". Rendez-vous sur votre dashboard pour négocier !"
       };
     }
   </script>

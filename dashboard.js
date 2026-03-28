@@ -391,13 +391,22 @@ async function runMatching(request) {
 
 relaunchBtn?.addEventListener("click", async () => {
   if (!currentUserId) return;
-  const { data } = await sb.from("requests")
-    .select("id,title,status,budget,skills,category").eq("client_user_id", currentUserId)
-    .in("status", ["en_attente", "match_en_cours"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  if (!data) { alert("Aucune demande en attente à relancer."); return; }
-  await runMatching(data);
-  alert("Matching relancé !");
-  await refreshAll();
+  relaunchBtn.textContent = "Recherche en cours...";
+  relaunchBtn.disabled = true;
+  try {
+    const { data } = await sb.from("requests")
+      .select("id,title,status,budget,skills,category").eq("client_user_id", currentUserId)
+      .in("status", ["nouveau", "en_attente", "match_en_cours"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!data) { alert("Aucune demande en attente à relancer."); return; }
+    await runMatching(data);
+    alert("Matching relancé !");
+    await refreshAll();
+  } catch (_) {
+    alert("Erreur lors du matching.");
+  } finally {
+    relaunchBtn.textContent = "Relancer le matching";
+    relaunchBtn.disabled = false;
+  }
 });
 
 supportBtn?.addEventListener("click", () => alert("Support contacté (démo). Réponse sous 24h."));

@@ -62,6 +62,12 @@ const ratingComment = document.getElementById("ratingComment");
 const submitRatingBtn = document.getElementById("submitRating");
 const skipRatingBtn = document.getElementById("skipRating");
 const availableRequests = document.getElementById("availableRequests");
+const applyModal = document.getElementById("applyModal");
+const applyPriceInput = document.getElementById("applyPriceInput");
+const applyMessageInput = document.getElementById("applyMessageInput");
+const confirmApplyBtn = document.getElementById("confirmApplyBtn");
+const cancelApplyBtn = document.getElementById("cancelApplyBtn");
+let pendingApplyRequest = null;
 
 // ---- INIT ----
 async function init() {
@@ -261,20 +267,58 @@ function renderAvailableList(items) {
       '<div style="flex:1"><div class="title">' + r.title + '</div>' +
       '<div class="meta">' + (r.category || "") + ' \u00b7 ' + (r.budget ? r.budget + ' \u20ac' : 'Budget \u00e0 d\u00e9finir') + ' \u00b7 ' + date + '</div>' +
       '<div class="meta">' + (r.skills || '') + '</div></div>' +
-      '<button class="btn sm primary" data-apply="' + r.id + '">Postuler</button></li>';
+      '<button class="btn sm primary" data-apply="' + r.id + '" data-budget="' + (r.budget || "") + '">Postuler</button></li>';
   }).join("");
   // Bind apply buttons
   document.querySelectorAll("[data-apply]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      applyForRequest(btn.dataset.apply, btn);
+      openApplyModal(btn.dataset.apply, btn.dataset.budget, btn);
     });
   });
 }
 
-async function applyForRequest(requestId, btn) {
+function openApplyModal(requestId, budget, btn) {
+  pendingApplyRequest = { requestId: requestId, budget: Number(budget || 0), btn: btn };
+  if (applyPriceInput) applyPriceInput.value = pendingApplyRequest.budget > 0 ? String(pendingApplyRequest.budget) : "";
+  if (applyMessageInput) applyMessageInput.value = "";
+  if (applyModal) applyModal.classList.add("show");
+}
+
+function closeApplyModal() {
+  pendingApplyRequest = null;
+  if (applyModal) applyModal.classList.remove("show");
+}
+
+if (cancelApplyBtn) cancelApplyBtn.addEventListener("click", closeApplyModal);
+if (applyModal) {
+  applyModal.addEventListener("click", function(e) {
+    if (e.target === applyModal) closeApplyModal();
+  });
+}
+
+if (confirmApplyBtn) {
+  confirmApplyBtn.addEventListener("click", async function() {
+    if (!pendingApplyRequest) return;
+    var price = Number(applyPriceInput ? applyPriceInput.value : 0);
+    var message = applyMessageInput ? applyMessageInput.value.trim() : "";
+    await applyForRequest(pendingApplyRequest.requestId, pendingApplyRequest.btn, price, message);
+  });
+}
+
+async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
   if (!currentUserId || !currentIndep) return;
+  if (!isFinite(proposedPrice) || proposedPrice <= 0) {
+    alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
+    return;
+  }
+  if (!customMessage) {
+    alert("Le message personnalisé est obligatoire.");
+    return;
+  }
+  if (!btn) return;
   btn.textContent = "En cours...";
   btn.disabled = true;
+  if (confirmApplyBtn) confirmApplyBtn.disabled = true;
   try {
     // Assign self to this request
     var result = await sb.from("requests").update({
@@ -282,29 +326,37 @@ async function applyForRequest(requestId, btn) {
       status: "negociation",
       match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
       match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
-      negotiated_price: null
-    }).eq("id", requestId).is("assigned_indep_user_id", null);
+      negotiated_price: proposedPrice
+    }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
-    if (result.error) {
-      alert("Impossible de postuler. Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise.");
-      btn.textContent = "Postuler";
-      btn.disabled = false;
+    if (result.error || !result.data) {
+      alert("Impossible de postuler. " + (result.error && result.error.message ? result.error.message : "Cette demande a peut-\u00eatre d\u00e9j\u00e0 \u00e9t\u00e9 prise."));
       return;
     }
 
-    // Send system message
+    await sb.from("request_messages").insert({
+      request_id: requestId,
+      sender_user_id: currentUserId,
+      sender_role: "independant",
+      channel: "instant",
+      body: customMessage
+    }).catch(function(){});
+
     await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
       sender_role: "system", channel: "instant",
-      body: (currentIndep.firstname || "Ind\u00e9pendant") + " a accept\u00e9 de travailler sur cette mission. Vous pouvez maintenant n\u00e9gocier le prix."
+      body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
     }).catch(function(){});
 
-    alert("Candidature envoy\u00e9e ! Vous pouvez maintenant discuter avec le client.");
+    alert("Candidature envoy\u00e9e avec votre prix et votre message.");
+    closeApplyModal();
     await refreshAll();
   } catch (err) {
-    alert("Erreur lors de la candidature.");
+    alert("Erreur lors de la candidature : " + (err && err.message ? err.message : "inconnue"));
+  } finally {
     btn.textContent = "Postuler";
     btn.disabled = false;
+    if (confirmApplyBtn) confirmApplyBtn.disabled = false;
   }
 }
 

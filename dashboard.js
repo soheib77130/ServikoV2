@@ -168,16 +168,19 @@ async function openConversation(requestId) {
   let actionsHtml = "";
   if (req.status === "negociation") {
     actionsHtml += `<button class="btn sm primary" id="payBtn">Accepter & Payer</button>`;
+    actionsHtml += `<button class="btn sm danger" id="declineProposalBtn">Refuser la candidature</button>`;
   }
   if (["termine", "livre"].includes(req.status)) {
     actionsHtml += `<button class="btn sm" id="rateBtn">Noter</button>`;
   }
   chatActions.innerHTML = actionsHtml;
   document.getElementById("payBtn")?.addEventListener("click", openPaymentModal);
+  document.getElementById("declineProposalBtn")?.addEventListener("click", declineProposal);
   document.getElementById("rateBtn")?.addEventListener("click", () => openRatingModal());
 
   if (req.status === "negociation") {
-    chatHint.textContent = "Chat direct — Négociez le prix avec l'indépendant.";
+    const displayedPrice = req.negotiated_price || req.budget || "à définir";
+    chatHint.textContent = `Chat direct — Proposition actuelle : ${displayedPrice} €.`;
   } else if (["confirme", "paye", "en_cours"].includes(req.status)) {
     chatHint.textContent = "Fil de messages — La mission est en cours.";
   } else if (["termine", "livre"].includes(req.status)) {
@@ -223,6 +226,30 @@ async function sendMessage() {
   });
   msgInput.value = "";
   await loadMessages();
+}
+
+async function declineProposal() {
+  if (!currentRequest) return;
+  const ok = window.confirm("Refuser cette candidature ? La mission repassera en attente.");
+  if (!ok) return;
+  await sb.from("requests").update({
+    assigned_indep_user_id: null,
+    status: "en_attente",
+    negotiated_price: null,
+    match_summary: "Candidature refusée par le client. Mission remise en attente."
+  }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+  await sb.from("request_messages").insert({
+    request_id: currentRequest.id,
+    sender_user_id: currentUserId,
+    sender_role: "system",
+    channel: "instant",
+    body: "Le client a refusé la candidature. La mission a été remise en attente."
+  }).catch(() => {});
+  await refreshAll();
+  chatMessages.innerHTML = '<div class="hint" style="text-align:center;margin:auto">Candidature refusée. En attente d\'un nouvel indépendant.</div>';
+  if (chatInputArea) chatInputArea.style.display = "none";
+  if (chatActions) chatActions.innerHTML = "";
+  if (chatStatus) chatStatus.textContent = "En attente";
 }
 
 // ---- REALTIME ----

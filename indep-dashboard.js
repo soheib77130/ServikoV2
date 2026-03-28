@@ -422,7 +422,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
       request_id: requestId,
       sender_user_id: currentUserId,
       sender_role: "independant",
-      channel: "instant",
+      channel: "fil",
       body: customMessage
     });
 
@@ -432,7 +432,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
 
     var systemMsgResult = await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
-      sender_role: "system", channel: "instant",
+      sender_role: "system", channel: "fil",
       body: (profile.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
     });
 
@@ -582,10 +582,9 @@ async function openConversation(requestId) {
 
 async function loadMessages() {
   if (!currentRequest) return;
-  var isPost = ["confirme", "paye", "en_cours", "termine", "livre"].indexOf(currentRequest.status) !== -1;
-  var channel = isPost ? "fil" : "instant";
+  var channel = "fil";
   var result = await sb.from("request_messages")
-    .select("sender_role,body,created_at").eq("request_id", currentRequest.id).eq("channel", channel)
+    .select("sender_role,body,created_at").eq("request_id", currentRequest.id)
     .order("created_at", { ascending: true });
   var msgs = result.data;
   if (!msgs || msgs.length === 0) {
@@ -605,8 +604,7 @@ if (msgInput) msgInput.addEventListener("keydown", function(e) { if (e.key === "
 
 async function sendMessage() {
   if (!currentRequest || !msgInput || !msgInput.value.trim()) return;
-  var isPost = ["confirme", "paye", "en_cours", "termine", "livre"].indexOf(currentRequest.status) !== -1;
-  var channel = isPost ? "fil" : "instant";
+  var channel = "fil";
   await sb.from("request_messages").insert({
     request_id: currentRequest.id, sender_user_id: currentUserId,
     sender_role: "independant", channel: channel, body: msgInput.value.trim()
@@ -622,7 +620,7 @@ if (proposePriceBtn) {
     var price = Number(priceInput.value);
     await sb.from("requests").update({ negotiated_price: price }).eq("id", currentRequest.id);
     await sb.from("request_messages").insert({
-      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Nouveau prix propos\u00e9 par l'ind\u00e9pendant : " + price + " \u20ac"
     });
     await loadMessages();
@@ -636,7 +634,7 @@ if (acceptPriceBtn) {
     if (!price) { alert("Aucun prix d\u00e9fini."); return; }
     await sb.from("requests").update({ status: "confirme", negotiated_price: Number(price) }).eq("id", currentRequest.id);
     await sb.from("request_messages").insert({
-      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Prix accept\u00e9 : " + price + " \u20ac. En attente du paiement."
     });
     await sb.from("request_messages").insert({
@@ -748,7 +746,7 @@ async function runMatching() {
   }).eq("id", best.request.id);
   if (price) {
     await sb.from("request_messages").insert({
-      request_id: best.request.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: best.request.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Proposition initiale : " + price + " \u20ac (ajustable)."
     });
   }

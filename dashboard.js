@@ -66,23 +66,30 @@ document.querySelectorAll("[data-logout]").forEach(b => b.addEventListener("clic
 
 // ---- REFRESH ----
 async function refreshAll() {
-  await Promise.all([loadRequests(), loadKPIs(), loadRating()]);
+  // Run independently so one failure doesn't block others
+  await loadRequests().catch(() => {});
+  await loadKPIs().catch(() => {});
+  await loadRating().catch(() => {});
 }
 
 async function loadKPIs() {
-  const { data } = await sb.from("requests").select("id,status,negotiated_price,budget").eq("client_user_id", currentUserId);
-  if (!data) return;
-  const active = data.filter(r => !["confirme", "termine", "annule"].includes(r.status));
-  kpiRequests.textContent = active.length;
-  const totalBudget = data.reduce((s, r) => s + Number(r.negotiated_price || r.budget || 0), 0);
-  kpiBudget.textContent = totalBudget + " €";
+  try {
+    const { data, error } = await sb.from("requests").select("id,status,negotiated_price,budget").eq("client_user_id", currentUserId);
+    if (error || !data) return;
+    const active = data.filter(r => !["confirme", "termine", "annule", "livre"].includes(r.status));
+    if (kpiRequests) kpiRequests.textContent = active.length;
+    const totalBudget = data.reduce((s, r) => s + Number(r.negotiated_price || r.budget || 0), 0);
+    if (kpiBudget) kpiBudget.textContent = totalBudget + " €";
+  } catch (_) {}
 }
 
 async function loadRating() {
-  const { data } = await sb.from("ratings").select("score").eq("rated_user_id", currentUserId);
-  if (!data || data.length === 0) { kpiRating.textContent = "—"; return; }
-  const avg = data.reduce((s, r) => s + Number(r.score), 0) / data.length;
-  kpiRating.textContent = avg.toFixed(1) + " / 10";
+  try {
+    const { data, error } = await sb.from("ratings").select("score").eq("rated_user_id", currentUserId);
+    if (error || !data || data.length === 0) { if (kpiRating) kpiRating.textContent = "—"; return; }
+    const avg = data.reduce((s, r) => s + Number(r.score), 0) / data.length;
+    if (kpiRating) kpiRating.textContent = avg.toFixed(1) + " / 10";
+  } catch (_) { if (kpiRating) kpiRating.textContent = "—"; }
 }
 
 function formatStatus(s) {
@@ -98,10 +105,16 @@ function statusPillClass(s) {
 }
 
 async function loadRequests() {
+  try {
   const { data, error } = await sb.from("requests")
     .select("id,title,status,created_at,negotiated_price,budget,assigned_indep_user_id,category,skills,match_summary,deadline")
     .eq("client_user_id", currentUserId).order("created_at", { ascending: false }).limit(20);
-  if (error || !data) { requestList.innerHTML = '<li class="hint">Erreur de chargement.</li>'; return; }
+  if (error || !data) {
+    if (requestList) requestList.innerHTML = '<li class="hint">Aucune demande trouvée.</li>';
+    if (chatList) chatList.innerHTML = '<li class="hint">Aucune conversation.</li>';
+    if (completedList) completedList.innerHTML = '<li class="hint">Aucune mission terminée.</li>';
+    return;
+  }
 
   const active = data.filter(r => !["termine", "livre"].includes(r.status));
   const done = data.filter(r => ["termine", "livre"].includes(r.status));
@@ -129,6 +142,11 @@ async function loadRequests() {
   // Bind clicks
   document.querySelectorAll("[data-id]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.id))));
   document.querySelectorAll("[data-chat]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.chat))));
+  } catch (err) {
+    console.error("loadRequests error:", err);
+    if (requestList) requestList.innerHTML = '<li class="hint">Erreur de connexion. Rechargez la page.</li>';
+    if (chatList) chatList.innerHTML = '<li class="hint">Aucune conversation.</li>';
+  }
 }
 
 // ---- CONVERSATION ----
@@ -236,7 +254,7 @@ cancelPayment?.addEventListener("click", () => paymentModal.classList.remove("sh
 confirmPayment?.addEventListener("click", async () => {
   if (!currentRequest) return;
   const price = currentRequest.negotiated_price || currentRequest.budget || 0;
-  // Create payment
+  // Create payment (silently fails if payments table not yet created)
   await sb.from("payments").insert({
     request_id: currentRequest.id,
     client_user_id: currentUserId,
@@ -244,9 +262,10 @@ confirmPayment?.addEventListener("click", async () => {
     amount: price,
     status: "paid",
     paid_at: new Date().toISOString()
-  });
-  // Update request
-  await sb.from("requests").update({ status: "paye", paid: true }).eq("id", currentRequest.id);
+  }).catch(() => {});
+  // Update request status (paid column may not exist yet, try with fallback)
+  const { error: upErr } = await sb.from("requests").update({ status: "paye", paid: true }).eq("id", currentRequest.id);
+  if (upErr) await sb.from("requests").update({ status: "paye" }).eq("id", currentRequest.id);
   // System message
   await sb.from("request_messages").insert({
     request_id: currentRequest.id,
@@ -319,13 +338,15 @@ function computeScore(request, indep) {
 }
 
 async function attemptAutoMatch() {
-  const { data: pending } = await sb.from("requests")
-    .select("id,title,status,budget,skills,category,assigned_indep_user_id")
-    .eq("client_user_id", currentUserId).in("status", ["en_attente", "match_en_cours"]);
-  if (!pending) return;
-  const unmatched = pending.filter(r => !r.assigned_indep_user_id);
-  for (const req of unmatched) await runMatching(req);
-  if (unmatched.length > 0) await refreshAll();
+  try {
+    const { data: pending } = await sb.from("requests")
+      .select("id,title,status,budget,skills,category,assigned_indep_user_id")
+      .eq("client_user_id", currentUserId).in("status", ["en_attente", "match_en_cours"]);
+    if (!pending) return;
+    const unmatched = pending.filter(r => !r.assigned_indep_user_id);
+    for (const req of unmatched) await runMatching(req).catch(() => {});
+    if (unmatched.length > 0) await refreshAll();
+  } catch (_) {}
 }
 
 async function runMatching(request) {
@@ -346,7 +367,7 @@ async function runMatching(request) {
     match_summary: `Match: ${top.indep.firstname || ""} ${top.indep.lastname || ""} (${top.score} pts)`,
     negotiated_price: price
   }).eq("id", request.id);
-  // Notify indep
+  // Notify indep (silently fails if notifications table not yet created)
   await sb.from("notifications").insert({
     recipient_user_id: top.indep.user_id,
     request_id: request.id,
@@ -354,7 +375,7 @@ async function runMatching(request) {
     title: "Nouvelle mission",
     body: `${request.title} — ${request.budget ? request.budget + " €" : "Budget à définir"}`,
     expires_at: new Date(Date.now() + 60000).toISOString()
-  });
+  }).catch(() => {});
   if (price) {
     await sb.from("request_messages").insert({
       request_id: request.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",

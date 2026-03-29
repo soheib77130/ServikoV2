@@ -167,14 +167,14 @@ async function openConversation(requestId) {
   // Actions
   let actionsHtml = "";
   if (req.status === "negociation") {
-    actionsHtml += `<button class="btn sm primary" id="payBtn">Accepter & Payer</button>`;
-    actionsHtml += `<button class="btn sm danger" id="declineProposalBtn">Refuser la candidature</button>`;
+    actionsHtml += `<button class="btn sm primary" id="acceptProposalBtn">Accepter l'offre</button>`;
+    actionsHtml += `<button class="btn sm danger" id="declineProposalBtn">Refuser l'offre</button>`;
   }
   if (["termine", "livre"].includes(req.status)) {
     actionsHtml += `<button class="btn sm" id="rateBtn">Noter</button>`;
   }
   chatActions.innerHTML = actionsHtml;
-  document.getElementById("payBtn")?.addEventListener("click", openPaymentModal);
+  document.getElementById("acceptProposalBtn")?.addEventListener("click", acceptProposal);
   document.getElementById("declineProposalBtn")?.addEventListener("click", declineProposal);
   document.getElementById("rateBtn")?.addEventListener("click", () => openRatingModal());
 
@@ -195,9 +195,9 @@ async function openConversation(requestId) {
 
 async function loadMessages() {
   if (!currentRequest) return;
-  const channel = ["confirme", "paye", "en_cours", "termine", "livre"].includes(currentRequest.status) ? "fil" : "instant";
+  const channel = ["negociation", "confirme", "paye", "en_cours", "termine", "livre"].includes(currentRequest.status) ? "fil" : "instant";
   const { data: msgs } = await sb.from("request_messages")
-    .select("sender_role,body,created_at").eq("request_id", currentRequest.id).eq("channel", channel)
+    .select("sender_role,body,created_at").eq("request_id", currentRequest.id)
     .order("created_at", { ascending: true });
   if (!msgs || msgs.length === 0) {
     chatMessages.innerHTML = '<div class="hint" style="text-align:center;margin:auto">Aucun message pour le moment.</div>';
@@ -216,7 +216,7 @@ msgInput?.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(
 
 async function sendMessage() {
   if (!currentRequest || !msgInput.value.trim()) return;
-  const channel = ["confirme", "paye", "en_cours", "termine", "livre"].includes(currentRequest.status) ? "fil" : "instant";
+  const channel = "fil";
   await sb.from("request_messages").insert({
     request_id: currentRequest.id,
     sender_user_id: currentUserId,
@@ -226,6 +226,39 @@ async function sendMessage() {
   });
   msgInput.value = "";
   await loadMessages();
+}
+
+async function acceptProposal() {
+  if (!currentRequest) return;
+  const ok = window.confirm("Accepter cette offre ? La mission passera en cours.");
+  if (!ok) return;
+  const price = currentRequest.negotiated_price || currentRequest.budget || 0;
+
+  const { error: upErr } = await sb.from("requests").update({
+    status: "en_cours",
+    paid: true
+  }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+
+  if (upErr) {
+    const { error: fallbackErr } = await sb.from("requests").update({
+      status: "en_cours"
+    }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+    if (fallbackErr) {
+      alert("Impossible d'accepter l'offre pour le moment. Merci de réessayer.");
+      return;
+    }
+  }
+
+  await sb.from("request_messages").insert({
+    request_id: currentRequest.id,
+    sender_user_id: currentUserId,
+    sender_role: "system",
+    channel: "fil",
+    body: `Offre acceptée à ${price} €. La mission passe en cours ✅`
+  }).catch(() => {});
+
+  await refreshAll();
+  await openConversation(currentRequest.id);
 }
 
 async function declineProposal() {
@@ -242,7 +275,7 @@ async function declineProposal() {
     request_id: currentRequest.id,
     sender_user_id: currentUserId,
     sender_role: "system",
-    channel: "instant",
+    channel: "fil",
     body: "Le client a refusé la candidature. La mission a été remise en attente."
   }).catch(() => {});
   await refreshAll();
@@ -405,7 +438,7 @@ async function runMatching(request) {
   }).catch(() => {});
   if (price) {
     await sb.from("request_messages").insert({
-      request_id: request.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: request.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: `Proposition initiale : ${price} € (ajustable avant validation).`
     });
   }

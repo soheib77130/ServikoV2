@@ -233,10 +233,22 @@ async function acceptProposal() {
   const ok = window.confirm("Accepter cette offre ? La mission passera en cours.");
   if (!ok) return;
   const price = currentRequest.negotiated_price || currentRequest.budget || 0;
-  await sb.from("requests").update({
+
+  const { error: upErr } = await sb.from("requests").update({
     status: "en_cours",
     paid: true
   }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+
+  if (upErr) {
+    const { error: fallbackErr } = await sb.from("requests").update({
+      status: "en_cours"
+    }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+    if (fallbackErr) {
+      alert("Impossible d'accepter l'offre pour le moment. Merci de réessayer.");
+      return;
+    }
+  }
+
   await sb.from("request_messages").insert({
     request_id: currentRequest.id,
     sender_user_id: currentUserId,
@@ -244,6 +256,7 @@ async function acceptProposal() {
     channel: "fil",
     body: `Offre acceptée à ${price} €. La mission passe en cours ✅`
   }).catch(() => {});
+
   await refreshAll();
   await openConversation(currentRequest.id);
 }

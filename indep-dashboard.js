@@ -408,7 +408,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
       assigned_indep_user_id: currentUserId,
       status: "negociation",
       match_score: computeScore({ skills: "", category: "", budget: 0 }, profile),
-      match_summary: "Candidature de " + (profile.firstname || "") + " " + (profile.lastname || ""),
+      match_summary: "Candidature de " + (profile.firstname || "") + " " + (profile.lastname || "") + (customMessage ? " — " + customMessage : ""),
       negotiated_price: proposedPrice
     }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 

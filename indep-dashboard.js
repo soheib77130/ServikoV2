@@ -72,6 +72,62 @@ const applyStatusText = document.getElementById("applyStatusText");
 let pendingApplyRequest = null;
 let availableRequestMap = {};
 
+async function ensureIndepProfile(user, forceRefresh) {
+  if (!sb) return null;
+
+  var resolvedUser = user || null;
+  if (!resolvedUser) {
+    var authUserResult = await sb.auth.getUser();
+    resolvedUser = authUserResult && authUserResult.data ? authUserResult.data.user : null;
+  }
+  if (!resolvedUser?.id) return null;
+  if (currentIndep && !forceRefresh) return currentIndep;
+
+  var profileResult = await sb.from("independants")
+    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
+    .eq("user_id", resolvedUser.id).maybeSingle();
+
+  if (!profileResult.error && profileResult.data) {
+    currentIndep = profileResult.data;
+    return currentIndep;
+  }
+
+  var meta = resolvedUser.user_metadata || {};
+  var fallbackProfile = {
+    firstname: meta.firstname || "",
+    lastname: meta.lastname || "",
+    city: "",
+    experience: "",
+    skills: "",
+    daily_rate: null,
+    status: "hors_ligne",
+    siret: "",
+    phone: ""
+  };
+
+  // Tentative de création non bloquante : on continue même si RLS la refuse.
+  var createResult = await sb.from("independants").upsert({
+    user_id: resolvedUser.id,
+    firstname: fallbackProfile.firstname,
+    lastname: fallbackProfile.lastname,
+    email: resolvedUser.email || "",
+    status: "hors_ligne"
+  }, { onConflict: "user_id" });
+
+  if (createResult.error) {
+    console.warn("Profil indépendant absent (création automatique refusée):", createResult.error.message);
+    currentIndep = fallbackProfile;
+    return currentIndep;
+  }
+
+  var refetch = await sb.from("independants")
+    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
+    .eq("user_id", resolvedUser.id).maybeSingle();
+
+  currentIndep = refetch.data || fallbackProfile;
+  return currentIndep;
+}
+
 // ---- INIT ----
 async function init() {
   if (!sb) return;
@@ -82,10 +138,7 @@ async function init() {
     await sb.auth.signOut(); window.location.href = "indep-login.html"; return;
   }
   currentUserId = user.id;
-  const { data } = await sb.from("independants")
-    .select("firstname,lastname,city,experience,skills,daily_rate,status,siret,phone")
-    .eq("user_id", user.id).maybeSingle();
-  currentIndep = data;
+  const data = await ensureIndepProfile(user);
   const name = [data?.firstname, data?.lastname].filter(Boolean).join(" ");
   if (welcomeTitle) welcomeTitle.textContent = name ? "Bonjour " + name : "Tableau de bord";
 
@@ -328,7 +381,14 @@ if (confirmApplyBtn) {
 
 async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
   if (!currentUserId) { alert("Session expirée. Merci de vous reconnecter."); return; }
-  if (!currentIndep) { alert("Profil indépendant introuvable. Vérifiez votre profil Supabase (table independants)."); return; }
+
+  var sessionResult = await sb.auth.getSession();
+  var user = sessionResult && sessionResult.data && sessionResult.data.session ? sessionResult.data.session.user : null;
+  var profile = await ensureIndepProfile(user, true) || {
+    firstname: user?.user_metadata?.firstname || "",
+    lastname: user?.user_metadata?.lastname || "",
+    skills: ""
+  };
   if (!isFinite(proposedPrice) || proposedPrice <= 0) {
     alert("Merci de renseigner un prix valide (nombre supérieur à 0).");
     return;
@@ -347,8 +407,8 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
     var result = await sb.from("requests").update({
       assigned_indep_user_id: currentUserId,
       status: "negociation",
-      match_score: computeScore({ skills: "", category: "", budget: 0 }, currentIndep),
-      match_summary: "Candidature de " + (currentIndep.firstname || "") + " " + (currentIndep.lastname || ""),
+      match_score: computeScore({ skills: "", category: "", budget: 0 }, profile),
+      match_summary: "Candidature de " + (profile.firstname || "") + " " + (profile.lastname || "") + (customMessage ? " — " + customMessage : ""),
       negotiated_price: proposedPrice
     }).eq("id", requestId).is("assigned_indep_user_id", null).select("id").maybeSingle();
 
@@ -362,7 +422,7 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
       request_id: requestId,
       sender_user_id: currentUserId,
       sender_role: "independant",
-      channel: "instant",
+      channel: "fil",
       body: customMessage
     });
 
@@ -372,8 +432,8 @@ async function applyForRequest(requestId, btn, proposedPrice, customMessage) {
 
     var systemMsgResult = await sb.from("request_messages").insert({
       request_id: requestId, sender_user_id: currentUserId,
-      sender_role: "system", channel: "instant",
-      body: (currentIndep.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
+      sender_role: "system", channel: "fil",
+      body: (profile.firstname || "Ind\u00e9pendant") + " propose " + proposedPrice + " \u20ac pour cette mission."
     });
 
     if (systemMsgResult.error) {
@@ -522,10 +582,9 @@ async function openConversation(requestId) {
 
 async function loadMessages() {
   if (!currentRequest) return;
-  var isPost = ["confirme", "paye", "en_cours", "termine", "livre"].indexOf(currentRequest.status) !== -1;
-  var channel = isPost ? "fil" : "instant";
+  var channel = "fil";
   var result = await sb.from("request_messages")
-    .select("sender_role,body,created_at").eq("request_id", currentRequest.id).eq("channel", channel)
+    .select("sender_role,body,created_at").eq("request_id", currentRequest.id)
     .order("created_at", { ascending: true });
   var msgs = result.data;
   if (!msgs || msgs.length === 0) {
@@ -545,8 +604,7 @@ if (msgInput) msgInput.addEventListener("keydown", function(e) { if (e.key === "
 
 async function sendMessage() {
   if (!currentRequest || !msgInput || !msgInput.value.trim()) return;
-  var isPost = ["confirme", "paye", "en_cours", "termine", "livre"].indexOf(currentRequest.status) !== -1;
-  var channel = isPost ? "fil" : "instant";
+  var channel = "fil";
   await sb.from("request_messages").insert({
     request_id: currentRequest.id, sender_user_id: currentUserId,
     sender_role: "independant", channel: channel, body: msgInput.value.trim()
@@ -562,7 +620,7 @@ if (proposePriceBtn) {
     var price = Number(priceInput.value);
     await sb.from("requests").update({ negotiated_price: price }).eq("id", currentRequest.id);
     await sb.from("request_messages").insert({
-      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Nouveau prix propos\u00e9 par l'ind\u00e9pendant : " + price + " \u20ac"
     });
     await loadMessages();
@@ -576,7 +634,7 @@ if (acceptPriceBtn) {
     if (!price) { alert("Aucun prix d\u00e9fini."); return; }
     await sb.from("requests").update({ status: "confirme", negotiated_price: Number(price) }).eq("id", currentRequest.id);
     await sb.from("request_messages").insert({
-      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: currentRequest.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Prix accept\u00e9 : " + price + " \u20ac. En attente du paiement."
     });
     await sb.from("request_messages").insert({
@@ -688,7 +746,7 @@ async function runMatching() {
   }).eq("id", best.request.id);
   if (price) {
     await sb.from("request_messages").insert({
-      request_id: best.request.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: best.request.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: "Proposition initiale : " + price + " \u20ac (ajustable)."
     });
   }

@@ -489,6 +489,56 @@
     }
     .schemaStep strong{font-size:14px}
     .schemaStep p{margin:0; color:var(--muted); font-weight:650; font-size:13px}
+    .actors{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:8px;
+    }
+    .actor{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(10,14,22,.45);
+      border-radius:12px;
+      padding:8px;
+      text-align:center;
+      display:grid;
+      gap:4px;
+      font-weight:750;
+      font-size:12px;
+    }
+    .actor .emoji{
+      font-size:20px;
+      animation: bob 2.2s ease-in-out infinite;
+    }
+    .actor:nth-child(2) .emoji{animation-delay:.25s}
+    .actor:nth-child(3) .emoji{animation-delay:.5s}
+    .moneyLane{
+      position:relative;
+      border:1px dashed rgba(96,165,250,.35);
+      border-radius:12px;
+      padding:10px 12px;
+      overflow:hidden;
+      background: rgba(96,165,250,.06);
+      font-weight:700;
+      color:#dbeafe;
+    }
+    .coin{
+      position:absolute;
+      top:50%;
+      transform: translateY(-50%);
+      font-size:16px;
+      animation: coinMove 3.6s linear infinite;
+      filter: drop-shadow(0 0 8px rgba(251,191,36,.5));
+    }
+    .coin.c2{animation-delay:1.2s}
+    .coin.c3{animation-delay:2.4s}
+    @keyframes coinMove{
+      0%{left:-10%}
+      100%{left:105%}
+    }
+    @keyframes bob{
+      0%,100%{transform: translateY(0)}
+      50%{transform: translateY(-3px)}
+    }
     @keyframes pulseGlow{
       0%,100%{box-shadow: inset 0 0 0 0 rgba(96,165,250,0)}
       50%{box-shadow: inset 0 0 0 1px rgba(96,165,250,.25)}
@@ -859,8 +909,8 @@
             <div class="badge2">🔒 <small>Paiement</small> Escrow sécurisé</div>
             <div class="miniLabel">Sécurisé</div>
           </div>
-          <div class="bigNum" style="font-size:28px;line-height:1.2">Infaillible & sécurisé</div>
-          <div class="kpiText">Le paiement est bloqué, la livraison est vérifiée, puis le versement est effectué automatiquement.</div>
+          <div class="bigNum">2%</div>
+          <div class="kpiText">Seulement 2% de commission avec paiement escrow sécurisé.</div>
 
           <div class="heroPanelRow">
             <div class="miniLabel">Suivi mission</div>
@@ -1044,6 +1094,15 @@
             <span>👤 Côté client</span>
             <span class="pillFlow">Parcours sécurisé</span>
           </div>
+          <div class="actors">
+            <div class="actor"><div class="emoji">👤</div><div>Client</div></div>
+            <div class="actor"><div class="emoji">🏦</div><div>Escrow Serviko</div></div>
+            <div class="actor"><div class="emoji">🧑‍💻</div><div>Indépendant</div></div>
+          </div>
+          <div class="moneyLane">
+            Flux d'argent sécurisé : client → escrow → indépendant
+            <span class="coin">💶</span><span class="coin c2">💶</span><span class="coin c3">💶</span>
+          </div>
           <div class="schemaStep"><strong>1) Le client paie</strong><p>Le paiement est initié dès validation de l'offre.</p></div>
           <div class="schemaArrow">↓</div>
           <div class="schemaStep"><strong>2) Argent bloqué (escrow)</strong><p>Les fonds restent sécurisés sur la plateforme pendant l'exécution.</p></div>
@@ -1059,6 +1118,15 @@
           <div class="schemaTitle">
             <span>🧑‍💻 Côté indépendant</span>
             <span class="pillFlow">Paiement garanti</span>
+          </div>
+          <div class="actors">
+            <div class="actor"><div class="emoji">🧑‍💻</div><div>Indépendant</div></div>
+            <div class="actor"><div class="emoji">🛡️</div><div>Admin contrôle</div></div>
+            <div class="actor"><div class="emoji">💳</div><div>Paiement final</div></div>
+          </div>
+          <div class="moneyLane">
+            Après validation : commission Serviko -2% puis versement
+            <span class="coin">💸</span><span class="coin c2">💸</span><span class="coin c3">💸</span>
           </div>
           <div class="schemaStep"><strong>1) Le client confirme et paie</strong><p>La mission est financièrement sécurisée avant production.</p></div>
           <div class="schemaArrow">↓</div>

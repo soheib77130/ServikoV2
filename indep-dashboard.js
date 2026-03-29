@@ -277,10 +277,10 @@ async function loadMissions() {
   }).join("");
 
   document.querySelectorAll("[data-mission]").forEach(function(el) {
-    el.addEventListener("click", function() { openMissionDetail(Number(el.dataset.mission)); });
+    el.addEventListener("click", function() { openMissionDetail(el.dataset.mission); });
   });
   document.querySelectorAll("[data-chat]").forEach(function(el) {
-    el.addEventListener("click", function() { openConversation(Number(el.dataset.chat)); });
+    el.addEventListener("click", function() { openConversation(el.dataset.chat); });
   });
 }
 
@@ -464,7 +464,7 @@ async function openMissionDetail(requestId) {
   currentRequest = req;
   if (missionDetailCard) missionDetailCard.style.display = "block";
   document.querySelectorAll("[data-mission]").forEach(function(el) {
-    el.classList.toggle("active", Number(el.dataset.mission) === requestId);
+    el.classList.toggle("active", String(el.dataset.mission) === String(requestId));
   });
   if (missionDetail) missionDetail.innerHTML =
     '<div class="detail-row"><span class="dl">Titre</span><span class="dd">' + req.title + '</span></div>' +
@@ -551,7 +551,7 @@ async function openConversation(requestId) {
   if (!req) return;
   currentRequest = req;
   document.querySelectorAll("[data-chat]").forEach(function(el) {
-    el.classList.toggle("active", Number(el.dataset.chat) === requestId);
+    el.classList.toggle("active", String(el.dataset.chat) === String(requestId));
   });
   if (chatTitle) chatTitle.textContent = req.title;
   if (chatStatusText) chatStatusText.textContent = formatStatus(req.status);

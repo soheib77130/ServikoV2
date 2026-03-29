@@ -140,8 +140,8 @@ async function loadRequests() {
   }
 
   // Bind clicks
-  document.querySelectorAll("[data-id]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.id))));
-  document.querySelectorAll("[data-chat]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.chat))));
+  document.querySelectorAll("[data-id]").forEach(el => el.addEventListener("click", () => openConversation(el.dataset.id)));
+  document.querySelectorAll("[data-chat]").forEach(el => el.addEventListener("click", () => openConversation(el.dataset.chat)));
   } catch (err) {
     console.error("loadRequests error:", err);
     if (requestList) requestList.innerHTML = '<li class="hint">Erreur de connexion. Rechargez la page.</li>';
@@ -158,7 +158,7 @@ async function openConversation(requestId) {
   currentRequest = req;
 
   // Highlight active
-  document.querySelectorAll("[data-chat]").forEach(el => el.classList.toggle("active", Number(el.dataset.chat) === requestId));
+  document.querySelectorAll("[data-chat]").forEach(el => el.classList.toggle("active", String(el.dataset.chat) === String(requestId)));
 
   chatTitle.textContent = req.title || "Discussion";
   chatStatus.textContent = formatStatus(req.status);

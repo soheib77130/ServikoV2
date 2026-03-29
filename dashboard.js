@@ -132,7 +132,7 @@ async function loadRequests() {
   }
 
   // Chat sidebar
-  const withIndep = data.filter(r => r.assigned_indep_user_id);
+  const withIndep = data.filter(r => r.assigned_indep_user_id || ["negociation", "confirme", "paye", "en_cours"].includes(r.status));
   if (withIndep.length === 0) {
     chatList.innerHTML = '<li class="hint">Aucune conversation.</li>';
   } else {
@@ -180,7 +180,8 @@ async function openConversation(requestId) {
 
   if (req.status === "negociation") {
     const displayedPrice = req.negotiated_price || req.budget || "à définir";
-    chatHint.textContent = `Chat direct — Proposition actuelle : ${displayedPrice} €.`;
+    const details = req.match_summary ? ` ${req.match_summary}` : "";
+    chatHint.textContent = `Chat direct — Proposition actuelle : ${displayedPrice} €. ${details}`.trim();
   } else if (["confirme", "paye", "en_cours"].includes(req.status)) {
     chatHint.textContent = "Fil de messages — La mission est en cours.";
   } else if (["termine", "livre"].includes(req.status)) {

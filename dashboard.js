@@ -132,7 +132,7 @@ async function loadRequests() {
   }
 
   // Chat sidebar
-  const withIndep = data.filter(r => r.assigned_indep_user_id);
+  const withIndep = data.filter(r => r.assigned_indep_user_id || ["negociation", "confirme", "paye", "en_cours"].includes(r.status));
   if (withIndep.length === 0) {
     chatList.innerHTML = '<li class="hint">Aucune conversation.</li>';
   } else {
@@ -140,8 +140,8 @@ async function loadRequests() {
   }
 
   // Bind clicks
-  document.querySelectorAll("[data-id]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.id))));
-  document.querySelectorAll("[data-chat]").forEach(el => el.addEventListener("click", () => openConversation(Number(el.dataset.chat))));
+  document.querySelectorAll("[data-id]").forEach(el => el.addEventListener("click", () => openConversation(el.dataset.id)));
+  document.querySelectorAll("[data-chat]").forEach(el => el.addEventListener("click", () => openConversation(el.dataset.chat)));
   } catch (err) {
     console.error("loadRequests error:", err);
     if (requestList) requestList.innerHTML = '<li class="hint">Erreur de connexion. Rechargez la page.</li>';
@@ -158,7 +158,7 @@ async function openConversation(requestId) {
   currentRequest = req;
 
   // Highlight active
-  document.querySelectorAll("[data-chat]").forEach(el => el.classList.toggle("active", Number(el.dataset.chat) === requestId));
+  document.querySelectorAll("[data-chat]").forEach(el => el.classList.toggle("active", String(el.dataset.chat) === String(requestId)));
 
   chatTitle.textContent = req.title || "Discussion";
   chatStatus.textContent = formatStatus(req.status);
@@ -167,20 +167,21 @@ async function openConversation(requestId) {
   // Actions
   let actionsHtml = "";
   if (req.status === "negociation") {
-    actionsHtml += `<button class="btn sm primary" id="payBtn">Accepter & Payer</button>`;
-    actionsHtml += `<button class="btn sm danger" id="declineProposalBtn">Refuser la candidature</button>`;
+    actionsHtml += `<button class="btn sm primary" id="acceptProposalBtn">Accepter l'offre</button>`;
+    actionsHtml += `<button class="btn sm danger" id="declineProposalBtn">Refuser l'offre</button>`;
   }
   if (["termine", "livre"].includes(req.status)) {
     actionsHtml += `<button class="btn sm" id="rateBtn">Noter</button>`;
   }
   chatActions.innerHTML = actionsHtml;
-  document.getElementById("payBtn")?.addEventListener("click", openPaymentModal);
+  document.getElementById("acceptProposalBtn")?.addEventListener("click", acceptProposal);
   document.getElementById("declineProposalBtn")?.addEventListener("click", declineProposal);
   document.getElementById("rateBtn")?.addEventListener("click", () => openRatingModal());
 
   if (req.status === "negociation") {
     const displayedPrice = req.negotiated_price || req.budget || "à définir";
-    chatHint.textContent = `Chat direct — Proposition actuelle : ${displayedPrice} €.`;
+    const details = req.match_summary ? ` ${req.match_summary}` : "";
+    chatHint.textContent = `Chat direct — Proposition actuelle : ${displayedPrice} €. ${details}`.trim();
   } else if (["confirme", "paye", "en_cours"].includes(req.status)) {
     chatHint.textContent = "Fil de messages — La mission est en cours.";
   } else if (["termine", "livre"].includes(req.status)) {
@@ -195,15 +196,28 @@ async function openConversation(requestId) {
 
 async function loadMessages() {
   if (!currentRequest) return;
-  const channel = ["confirme", "paye", "en_cours", "termine", "livre"].includes(currentRequest.status) ? "fil" : "instant";
   const { data: msgs } = await sb.from("request_messages")
-    .select("sender_role,body,created_at").eq("request_id", currentRequest.id).eq("channel", channel)
+    .select("sender_role,body,created_at").eq("request_id", currentRequest.id)
     .order("created_at", { ascending: true });
-  if (!msgs || msgs.length === 0) {
+
+  const synthetic = [];
+  if (currentRequest.status === "negociation") {
+    const offerPrice = currentRequest.negotiated_price || currentRequest.budget || "à définir";
+    const offerText = currentRequest.match_summary || "Un indépendant a proposé son offre.";
+    synthetic.push({
+      sender_role: "system",
+      body: `Offre en attente: ${offerPrice} €. ${offerText}`,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  const merged = synthetic.concat(msgs || []);
+  if (merged.length === 0) {
     chatMessages.innerHTML = '<div class="hint" style="text-align:center;margin:auto">Aucun message pour le moment.</div>';
     return;
   }
-  chatMessages.innerHTML = msgs.map(m => {
+
+  chatMessages.innerHTML = merged.map(m => {
     const time = new Date(m.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     return `<div class="msg ${m.sender_role}"><div>${m.body}</div><div class="time">${time}</div></div>`;
   }).join("");
@@ -216,7 +230,7 @@ msgInput?.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(
 
 async function sendMessage() {
   if (!currentRequest || !msgInput.value.trim()) return;
-  const channel = ["confirme", "paye", "en_cours", "termine", "livre"].includes(currentRequest.status) ? "fil" : "instant";
+  const channel = "fil";
   await sb.from("request_messages").insert({
     request_id: currentRequest.id,
     sender_user_id: currentUserId,
@@ -228,21 +242,58 @@ async function sendMessage() {
   await loadMessages();
 }
 
+async function acceptProposal() {
+  if (!currentRequest) return;
+  const ok = window.confirm("Accepter cette offre ? La mission passera en cours.");
+  if (!ok) return;
+  const price = currentRequest.negotiated_price || currentRequest.budget || 0;
+
+  const { error: upErr } = await sb.from("requests").update({
+    status: "en_cours",
+    paid: true
+  }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+
+  if (upErr) {
+    const { error: fallbackErr } = await sb.from("requests").update({
+      status: "en_cours"
+    }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+    if (fallbackErr) {
+      alert("Impossible d'accepter l'offre pour le moment. Merci de réessayer.");
+      return;
+    }
+  }
+
+  await sb.from("request_messages").insert({
+    request_id: currentRequest.id,
+    sender_user_id: currentUserId,
+    sender_role: "system",
+    channel: "fil",
+    body: `Offre acceptée à ${price} €. La mission passe en cours ✅`
+  }).catch(() => {});
+
+  await refreshAll();
+  await openConversation(currentRequest.id);
+}
+
 async function declineProposal() {
   if (!currentRequest) return;
   const ok = window.confirm("Refuser cette candidature ? La mission repassera en attente.");
   if (!ok) return;
-  await sb.from("requests").update({
+  const { error: declineErr } = await sb.from("requests").update({
     assigned_indep_user_id: null,
     status: "en_attente",
     negotiated_price: null,
     match_summary: "Candidature refusée par le client. Mission remise en attente."
   }).eq("id", currentRequest.id).eq("client_user_id", currentUserId);
+  if (declineErr) {
+    alert("Impossible de refuser l'offre pour le moment. Merci de réessayer.");
+    return;
+  }
   await sb.from("request_messages").insert({
     request_id: currentRequest.id,
     sender_user_id: currentUserId,
     sender_role: "system",
-    channel: "instant",
+    channel: "fil",
     body: "Le client a refusé la candidature. La mission a été remise en attente."
   }).catch(() => {});
   await refreshAll();
@@ -405,7 +456,7 @@ async function runMatching(request) {
   }).catch(() => {});
   if (price) {
     await sb.from("request_messages").insert({
-      request_id: request.id, sender_user_id: currentUserId, sender_role: "system", channel: "instant",
+      request_id: request.id, sender_user_id: currentUserId, sender_role: "system", channel: "fil",
       body: `Proposition initiale : ${price} € (ajustable avant validation).`
     });
   }
